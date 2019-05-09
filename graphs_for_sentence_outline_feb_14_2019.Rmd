@@ -41,14 +41,10 @@ milk_cons_global <- read_csv(file =  "../data/clean_data/milk_cons_global.csv")
 meat_prod_global <- read_csv(file =  "../data/clean_data/meat_prod_global.csv")
 milk_prod_global <- read_csv(file =  "../data/clean_data/milk_prod_global.csv")
 
-meat_yields_global <- read_csv(file =   "../data/clean_data/meat_yields_global.csv")
-milk_yields_global <- read_csv(file =  "../data/clean_data/milk_yields_globa
-                               l.csv")
+meat_prod_global_adjusted <- read_csv(file =  "../data/clean_data/meat_prod_global_adjusted.csv")
+milk_prod_global_adjusted <- read_csv(file =  "../data/clean_data/milk_prod_global_adjusted.csv")
 
-stocks_global <- read_csv(file =  "../data/clean_data/stocks_global.csv")
-livestock_density_global <- read_csv(file =   "../data/clean_data/livestock_density_global.csv")
-major_crosswalk <- read_csv(file =   "../data/clean_data/major_crosswalk.csv")
-minor_crosswalk <- read_csv(file =   "../data/clean_data/minor_crosswalk.csv")
+stocks_global <- read_csv(file =  "../data/clean_data/cattle_stocks_global.csv")
 hyde <- read_csv(file =   "../data/clean_data/hyde.csv")
 
 fue <- read_csv(file = "../data/raw_data/fue_wirsenius_2010.csv", skip = 2) #feed use efficiency
