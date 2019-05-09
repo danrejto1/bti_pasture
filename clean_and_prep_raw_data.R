@@ -2,7 +2,6 @@
 ### Original Author: Dan Rejto
 ### Last Update: May 6, 2019, Dan Rejto
 
-
 # Setup -------------------------------------------------------------------
 
 #navigate to Peak Pasture Folder before starting as needed
@@ -11,9 +10,9 @@
 ##### CLEAR ENVIRONMENT BEFORE RUNNING. IF YOU DONT, YOU'LL NEED TO PLAY WITH the "Rename Variables" section on making variable names lowercase
 
 #load packages   
-library('tidyverse')
-library('scales')
-library('plotly')
+require('tidyverse')
+require('scales')
+require('plotly')
 require('rlang')
 
 # Load Raw Data -----------------------------------------------------------
@@ -25,49 +24,46 @@ require('rlang')
 # Output type: Table
 # Thousand seperator: none
 # Selected Elements & Items of interest for each dataset as described in codebook file.
-# For datasets where items include animals, I selected as many of the following as available: asses, buffalo, camels, camelids, cattle, goat, horse, sheep
 
-##country-level data - with comment on dataset source
+
+## land area / pasture data
 land_area_country <- read_csv("data/raw_data/fao_country_level_land_area.csv") #from land use. selected Land area, Agricultural land, land under perm. meadows and pastures, forest land
 
-#japan (unlike other countres) stops reporting permanent pasture data in 2000 and starts reporting temporary pasture. I download the data for "-- Land under temp. meadows and pastures" only for Japan and merge it in
+# japan (unlike other countres) stops reporting permanent pasture data in 2000 and starts reporting temporary pasture. I download the data for "-- Land under temp. meadows and pastures" only for Japan and merge it in
 japan_temp_pasture <- read_csv("data/raw_data/fao_japan_pasture.csv")
 japan_temp_pasture$Item <- recode(japan_temp_pasture$Item, "Land under temp. meadows and pastures" = "Land under perm. meadows and pastures")
 
-land_area_country <- bind_rows(land_area_country, japan_temp_pasture)
+land_area_country <- bind_rows(land_area_country, japan_temp_pasture)  #merge in japan temp. pasture values
 
-## stock and production data
-cattle_stocks_country <- read_csv("data/raw_data/fao_country_level_cattle_stocks.csv") #from live animals, in number of animal head. just downloaded for cattle
-cons_country <- read_csv("data/raw_data/fao_country_level_meat_milk_food_supply.csv") #from food balance sheets
-milk_prod_country <- read_csv("data/raw_data/fao_country_level_milk_production.csv") #from livestock primary
-meat_prod_country <- read_csv("data/raw_data/fao_country_level_meat_production.csv") #from livestock primary
-
-#For following datasets I selected Regions > World + (Total)
-##global-level data
-cons_global <- read_csv("data/raw_data/fao_global_consumption.csv") #from food balance sheets
-meat_yields_global <- read_csv("data/raw_data/fao_global_meat_yields.csv") #from livestock primary
-milk_yields_global <- read_csv("data/raw_data/fao_global_milk_yields.csv") #from livestock primary
-meat_prod_global <- read_csv("data/raw_data/fao_global_meat_production.csv") #from livestock primary
-milk_prod_global <- read_csv("data/raw_data/fao_global_milk_production.csv") #from livestock primary
-stocks_global <- read_csv("data/raw_data/fao_global_stocks.csv")  #from livestock primary, in numbers of animal head
-
-# For global production values from herding animals I selected indigenous meat from ass, buffalo, camel, cattle, duck, geese, goat, horse, mule, other camelids, pig and sheep
-all_meat_global <- read_csv("data/raw_data/fao_global_production_yields_all_herd_animals.csv") #from livestock primary
-
-#for cattle stocks I selected just cattle stocks for all years for World>Total in Live Animals domain
-cattle_stocks_global<- read_csv("data/raw_data/fao_global_cattle_stocks.csv")
-
-#country to region crosswalk
-crosswalk <- read_csv("data/raw_data/fao_country_region_groups.csv") #from Definitions and Standards
-
-#Global grazing land data from Hyde 3.2, accessed 12-5-18 from https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:74467/tab/2 File name: grazing_r.txt
+# Global grazing land data from Hyde 3.2, accessed 12-5-18 from https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:74467/tab/2 File name: grazing_r.txt
 hyde <- read_delim(file = "data/raw_data/hyde_v3-2_grazing_by_region.txt", delim = " ")
 
-#World Bank COuntry Historical Income Classification, 
+
+## consumption and production data
+# I selected as many of the following as available: ass, buffalo, camel, cattle, goat, horse, mule, other camelids, pig and sheep
+
+# country level
+cattle_stocks_country <- read_csv("data/raw_data/fao_country_level_cattle_stocks.csv") #from live animals, in number of animal head. just downloaded for cattle
+cons_country <- read_csv("data/raw_data/fao_country_level_meat_milk_food_supply.csv") #from food balance sheets
+meat_prod_country <- read_csv("data/raw_data/fao_country_level_meat_production.csv") #from livestock primary
+milk_prod_country <- read_csv("data/raw_data/fao_country_level_milk_production.csv") #from livestock primary
+
+# global-level - For following datasets I selected Regions > World + (Total)
+cattle_stocks_global<- read_csv("data/raw_data/fao_global_cattle_stocks.csv")  #from live animals, in numbers of animal head
+cons_global <- read_csv("data/raw_data/fao_global_consumption.csv") #from food balance sheets
+meat_prod_global <- read_csv("data/raw_data/fao_global_meat_production_yields_all_herd_animals.csv") #from livestock primary
+milk_prod_global <- read_csv("data/raw_data/fao_global_milk_production_yields_all_herd_animals.csv") #from livestock primary
+
+
+## country to region crosswalk
+crosswalk <- read_csv("data/raw_data/fao_country_region_groups.csv") #from Definitions and Standards
+
+## country GDP/income data
+# World Bank COuntry Historical Income Classification, 
 # accessed 12-20-18 from http://databank.worldbank.org/data/download/site-content/OGHIST.xls 
 # or https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups
 
-#may need to open excel file and change last column name to X__1. It renders differently depending on the version of the readxl package 
+# you may need to open excel file and change last column name to X__1. It renders differently depending on the version of the readxl package 
 income_country <- readxl::read_xls(path = "data/raw_data/OGHIST.xls", sheet = 2, range = "A5:AF229")
 income_country <- income_country[c(7:nrow(income_country)),] #remove extra rows
 income_country <- select(income_country, "country" = `Bank's fiscal year:`,"inc_group_16"=FY16, "iso_code" = X__1) #select columns
@@ -81,53 +77,52 @@ income_country <- select(income_country, "country" = `Bank's fiscal year:`,"inc_
 #select GDP curent (US$), GDP growth (annual %), GDP per capita (current US$),GDP per capita growth (annual %), Population, total
 #download as csv
 #after downloading, extract zip file and use larger file, with "Data" in the filename
-gdp_pop_country <- read_csv("data/raw_data/world_bank_gdp_pop_country.csv")
-gdp_pop_country <- filter(gdp_pop_country, is.na(`Country Name`)==F) #remove extra blank rows for metadata
+gdp_pop_country <- read_csv("data/raw_data/world_bank_gdp_pop_country.csv", na = "..")
+gdp_pop_country <- filter(gdp_pop_country, is.na(`Country Name`)==F, `Country Name`!="") #remove extra blank rows for metadata
 
 
-# Climate categorizations (and income grouping over time)
+## Climate categorizations (and income grouping over time)
 # shared by Cecille Godde. I manually added NA in row 1366, which was empty, and changed Grenada's 2014 income status to Upper Middle Income to be consistent with its current World Bank income classification
 climate_income_categories <- read_csv(file = "data/raw_data/climate_income_categories_from_godde.csv") #climate & income groups over time
 climate_income_categories <- unique(select(climate_income_categories, -year))
 
+
 #rename production variables so the variable for tonnes & head have different names
 meat_prod_country$Element <- paste0(meat_prod_country$Element, "_", meat_prod_country$Unit)
-milk_prod_country$Element <- paste0(milk_prod_country$Element, "_", milk_prod_country$Unit)
+meat_prod_global$Element <- paste0(meat_prod_global$Element, "_", meat_prod_global$Unit)
 
-# Select Data of interest from All Files  ---------------------------------
+## Select Data of interest from All Files  ---------------------------------
 #select variables of interest for country data and rename area to country for consistency as well
+cattle_stocks_country <- select(cattle_stocks_country,Country = Area, Element, Item, Year,  Value)
+cons_country <- select(cons_country, Country, Element, Item, Year,  Value)
+land_area_country<- select(land_area_country, Country=Area, Element, Item, Year,  Value) 
 meat_prod_country <- select(meat_prod_country, Country = Area, Element, Item, Year,  Value)
 milk_prod_country <- select(milk_prod_country, Country = Area, Element, Item, Year,  Value)
-land_area_country<- select(land_area_country, Country=Area, Element, Item, Year,  Value) 
-stocks_country <- select(stocks_country,Country = Area, Element, Item, Year,  Value)
-cons_country <- select(cons_country, Country, Element, Item, Year,  Value)
 
 #select variables of interest for global data
+cattle_stocks_global <- select(cattle_stocks_global, Element, Item, Year, Value)
 cons_global <-  select(cons_global, Element, Item, Year,  Value)
-meat_yields_global <- select(meat_yields_global, Element, Item, Year,  Value)
-milk_yields_global <- select(milk_yields_global, Element, Item, Year,  Value)
 meat_prod_global <- select(meat_prod_global, Element, Item, Year, Value)
 milk_prod_global <- select(milk_prod_global, Element, Item, Year, Value)
-stocks_global <- select(stocks_global, Element, Item, Year, Value)
 
 hyde <- filter(hyde, region=="Total")
 
 
-# Reshape variables --------------------------------------------------------
+## Reshape variables --------------------------------------------------------
 # When there are multiple variables currently in 1 column, like yield and nubmer of milk animals, spread across multiple columns
 # Animal types are not a variable, but instead a subgroup of observation, so all animals remain under 1 "Item" column
+cattle_stocks_country <- spread(data = cattle_stocks_country, key = Element, value = Value)
 cons_country <- spread(data = cons_country, key = Element, value = Value)
+land_area_country <- spread(data = land_area_country, key = Element, value = Value)
 meat_prod_country <- spread(data = meat_prod_country, key = Element, value = Value)
 milk_prod_country <- spread(data = milk_prod_country, key = Element, value = Value)
-land_area_country <- spread(data = land_area_country, key = Element, value = Value)
-stocks_country <- spread(data = stocks_country, key = Element, value = Value)
 
+cattle_stocks_global <- spread(data = cattle_stocks_global, key = Element, value = Value)
 cons_global <-  spread(data = cons_global, key = Element, value = Value)
-meat_yields_global<-  spread(data = meat_yields_global, key = Element, value = Value)
-milk_yields_global<-  spread(data = milk_yields_global, key = Element, value = Value)
 meat_prod_global <- spread(data = meat_prod_global, key = Element, value = Value)
 milk_prod_global <- spread(data = milk_prod_global, key = Element, value = Value)
-stocks_global <- spread(data = stocks_global, key = Element, value = Value)
+#meat_yields_global<-  spread(data = meat_yields_global, key = Element, value = Value)
+#milk_yields_global<-  spread(data = milk_yields_global, key = Element, value = Value)
 
 #gather multiple columns for year in HYDE and GDP into 1 column like other datasets
 hyde <- gather(hyde, key = "year", value="area", -region)
@@ -137,8 +132,8 @@ gdp_pop_country <- select(gdp_pop_country, -`Country Code`, -`Series Code`) %>%
   gather(key = "year", value="values", -`Country Name`, -`Series Name`) %>%
   spread(key = `Series Name`, value = values)
 
-# Rename variables ----------------
 
+## Rename variables ----------------
 #make all var names lowercase for consistency
 dfs <- ls()
 
@@ -149,21 +144,12 @@ for(df in dfs) {
 }
 rm(df.tmp, df, dfs)
 
+
 #give vars short names 
-# code for short names to long names in codebook
-milk_prod_country <- rename(milk_prod_country,d_head = `milk animals_head`, d_prod = production_tonnes, d_yld = `yield_hg/an`)
-meat_prod_country <- rename(meat_prod_country, m_head = `production_head`, m_prod = production_tonnes, m_yld = `yield/carcass weight_hg/an`)
 cons_country <- rename(cons_country, cons_total = `domestic supply quantity`,
                        protein_pc = `protein supply quantity (g/capita/day)`,  
                        cons_pc_kg = `food supply quantity (kg/capita/yr)`,   
                        cons_pc_cal =`food supply (kcal/capita/day)`)
-
-gdp_pop_country <- rename(gdp_pop_country, country = `country name`, 
-                          gdp_pc = `gdp per capita (current us$)`, 
-                          gdp_pc_ann_pct_chg = `gdp per capita growth (annual %)`, 
-                          pop = `population, total`,
-                          gdp_ann_pct_chg = `gdp growth (annual %)`,
-                          gdp = `gdp (current us$)`)
 
 cons_global <-  rename(cons_global, cons_total = `food supply quantity (tonnes)`,
                        protein_pc = `protein supply quantity (g/capita/day)`,  
@@ -173,53 +159,61 @@ cons_global <-  rename(cons_global, cons_total = `food supply quantity (tonnes)`
 
 cons_global <- select(cons_global, -`food supply quantity (g/capita/day)`) #remove food quantity/day in g
 
-meat_yields_global <- rename(meat_yields_global, yield = `yield/carcass weight`)
+gdp_pop_country <- rename(gdp_pop_country, country = `country name`, 
+                          gdp_pc = `gdp per capita (current us$)`, 
+                          gdp_pc_ann_pct_chg = `gdp per capita growth (annual %)`, 
+                          pop = `population, total`,
+                          gdp_ann_pct_chg = `gdp growth (annual %)`,
+                          gdp = `gdp (current us$)`)
+
+meat_prod_country <- rename(meat_prod_country, m_head = `production_head`, m_prod = production_tonnes, m_yld = `yield/carcass weight_hg/an`)
+meat_prod_global <- rename(meat_prod_global, m_head = `production_head`, m_prod = production_tonnes, m_yld = `yield/carcass weight_hg/an`)
+
+milk_prod_country <- rename(milk_prod_country, d_head = `milk animals`, d_prod = production, d_yld = `yield`)
+milk_prod_global <- rename(milk_prod_global, d_head = `milk animals`, d_prod = production, d_yld = `yield`)
 
 
-### Recode factor names for consistency and combine camels with other camelids (for which theres only data on Peru and Bolivia)
-meat_prod_country$item <- as.factor(meat_prod_country$item)
-levels(meat_prod_country$item) <-  c("ass", "buffalo", "camelids", "cattle", "goat", "horse", "mule", "camelids", "sheep")
 
-meat_yields_global$item <- as.factor(meat_yields_global$item)
-levels(meat_yields_global$item) <-  c("buffalo","cattle", "goat", "sheep")
+## Recode factors ------------------
 
-milk_yields_global$item <- as.factor(milk_yields_global$item)
-levels(milk_yields_global$item) <-  c("buffalo","cattle", "goat", "sheep")
+# Recode factor names for consistency and combine camels with other camelids (for which theres only data on Peru and Bolivia)
+level_key <- c("Meat indigenous, camel" = "camelids",
+               "Meat indigenous, cattle" = "cattle",
+               "Meat indigenous, goat" = "goat",
+               "Meat indigenous, sheep" = "sheep",
+               "Meat indigenous, pig" = "pig",
+               "Meat indigenous, horse" ="horse",
+               "Meat indigenous, buffalo" = "buffalo",
+               "Meat indigenous, other camelids" = "camelids",
+               "Meat indigenous, ass" = "ass",
+               "Meat indigenous, mule" = "mule",
+               "Milk, whole fresh buffalo" = "buffalo", 
+               "Milk, whole fresh camel"   ="camel",
+               "Milk, whole fresh cow"     ="cattle",
+               "Milk, whole fresh goat"    = "goat",
+               "Milk, whole fresh sheep" ="sheep")
 
-milk_prod_country$item <- as.factor(milk_prod_country$item)
-levels(milk_prod_country$item) <-  c("buffalo", "camel", "cattle", "goat", "sheep")
+meat_prod_country$item <- recode(meat_prod_country$item, !!!level_key)
+meat_prod_global$item <- recode(meat_prod_global$item, !!!level_key)
+milk_prod_country$item <- recode(milk_prod_country$item, !!!level_key)
+milk_prod_global$item <- recode(milk_prod_global$item, !!!level_key)
 
-milk_prod_global$item <- as.factor(milk_prod_global$item)
-levels(milk_prod_global$item) <-  c("buffalo", "cattle", "goat", "sheep")
+land_area_country$item <- recode(land_area_country$item, `Agricultural land` = "ag_land", `Forest land`="forest", `Land area`="total_land", `Land under perm. meadows and pastures`="pasture")
 
-meat_prod_global$item <- as.factor(meat_prod_global$item)
-levels(meat_prod_global$item) <-  c("buffalo","cattle", "goat", "sheep") 
-
-land_area_country$item <- as.factor(land_area_country$item)
-levels(land_area_country$item) <- c("ag_land", "forest", "total_land", "pasture")
-
-
-stocks_global$item <- as.factor(stocks_global$item)
-levels(stocks_global$item) <-  c("ass", "buffalo", "camelids",  "camelids", "cattle", "goat", "horse", "mule", "camelids", "sheep")
-
-stocks_country$item <- as.factor(stocks_country$item)
-levels(stocks_country$item) <-  c("ass", "buffalo", "camelids", "camelids", "cattle", "goat", "horse", "mule", "sheep")
+cattle_stocks_global$item <- recode(cattle_stocks_global$item, Cattle = "cattle")
+cattle_stocks_country$item <- recode(cattle_stocks_country$item, Cattle = "cattle")
 
 #recode/rename years in gdp data
 gdp_pop_country$year <- gsub("\\[.*?\\]", "", gdp_pop_country$year) #replace [text] with nothing
 
 # Reclassify variables
-gdp_pop_country$year <- as.numeric(gdp_pop_country$year)
-gdp_pop_country$gdp_pc <- as.numeric(gdp_pop_country$gdp_pc)
-gdp_pop_country$gdp_pc_ann_pct_chg <- as.numeric(gdp_pop_country$gdp_pc_ann_pct_chg)
-gdp_pop_country$pop <- as.numeric(gdp_pop_country$pop)
-gdp_pop_country$gdp <- as.numeric(gdp_pop_country$gdp)
-gdp_pop_country$gdp_ann_pct_chg <- as.numeric(gdp_pop_country$gdp_ann_pct_chg)
+ gdp_pop_country$year <- as.numeric(gdp_pop_country$year)
 
-# Restructure and Rename Crosswalk  ---------------------------
+ 
+## Restructure and Rename Crosswalk  ---------------------------
 
-####prepare minor/major group merge
-#filter country-region crosswalk to create 2 groupings, major and minor regions 
+# prepare minor/major group merge
+# filter country-region crosswalk to create 2 groupings, major and minor regions 
 minor_crosswalk <- filter(crosswalk, `country group` %in% c("Eastern Africa", "Northern Africa", "Southern Africa", "Middle Africa","Western Africa",
                                                             "Central America", "Northern America", "South America","Caribbean",
                                                             "Central Asia","Western Asia","Southern Asia","Eastern Asia","South-Eastern Asia",
@@ -250,9 +244,9 @@ fyug <- c("Yugoslav SFR", "Bosnia and Herzegovina", "Croatia", "Macedonia",
 minor_crosswalk$minor_group[which(minor_crosswalk$country %in% fyug)] <- "Former Yugoslavia"
 
 
-# Address outliers for meat and milk production --------
+## Address outliers for meat and milk production --------
 
-#meat yields, productionn & head
+# meat yields, productionn & head
 # Hong Kong, Belgium, Bosnia, Bulgaria, Czechia, Malaysia, Eswatini, Malta, Mauritius, MOntenegro, Réunion, Singapore, Slovakia, Suriname, and Saudi Arabaia 
 # report a value of 10000 for beef, sheep, goat or horse yields a few years. This is almost more than 2x any other observation. 
 # Kazhakstan also reports yields of 7450 for horses one year, over 2x yields that of any other year. 
@@ -263,48 +257,42 @@ minor_crosswalk$minor_group[which(minor_crosswalk$country %in% fyug)] <- "Former
 # I conduct a  simple type of interpolation setting these values to the previously observed value 
 
 #create function to replace NAs with the last observation (last observation carried forward or LOCF)
-na.locf2 <- function(x) na.locf(x, na.rm = FALSE)
+na.locf2 <- function(x) zoo::na.locf(x, na.rm = FALSE)
 
 #set outlier values to NA
 meat_prod_country$m_yld[meat_prod_country$m_yld>7000] <- NA
 meat_prod_country[meat_prod_country %in% c(1,0)] <- NA
 
-#apply the LOCF function to each column, grouping by country and item so that if the first obs is NA, 
+# apply the LOCF function to each column, grouping by country and item so that if the first obs is NA, 
 # the function doesn't replace with observation from different country or item
 meat_prod_country <- transform(meat_prod_country, m_yld = ave(m_yld, country, item, FUN = na.locf2))
 meat_prod_country <- transform(meat_prod_country, m_head = ave(m_head, country, item, FUN = na.locf2))
 meat_prod_country <- transform(meat_prod_country, m_prod = ave(m_prod, country, item, FUN = na.locf2))
 
-
-
-#milk yields
+# milk yields
 # Iran & Greece's buffalo yields stand out as being ~50% higher (>21k) than for any other country starting in 2010 for Iran & in the years 2012/13 for Greece
 # The netherlands, Kuwait, Kazhakstan, and Ethiopia PDR have 0 or 1 values for prod
 # The netherlands, Hong Kong, and Kuwait have 0 or 1 values for head
 # Kuwait, Kazhakstan, and Ethiopia PDR and Mali have 0 values for yields some years
 # I do the same type of interpolation as before for these high outliers and low-liers that I assume are missing values
 
-
-#set outlier values to NA
+# set outlier values to NA
 milk_prod_country$d_yld[milk_prod_country$d_yld>20200 & milk_prod_country$item=="buffalo"] <- NA
 milk_prod_country[milk_prod_country %in% c(1,0)] <- NA
 
-
-#apply the LOCF function to each column, grouping by country and item so that if the first obs is NA, the function doesn't replace with observation from different country or item
+# apply the LOCF function to each column, grouping by country and item so that if the first obs is NA, the function doesn't replace with observation from different country or item
 milk_prod_country <- transform(milk_prod_country, d_yld = ave(d_yld, country, item, FUN = na.locf2))
 milk_prod_country <- transform(milk_prod_country, d_head = ave(d_head, country, item, FUN = na.locf2))
 milk_prod_country <- transform(milk_prod_country, d_prod = ave(d_prod, country, item, FUN = na.locf2))
 
 
 
-# Create convenience pasture dataset  --------
+## Address outliers for pasture --------
+# Create convenience pasture dataset
 pasture_country <- filter(land_area_country, item == "pasture") %>% #filter land area to just pasture
   select(-item) #remove item column 
 
 pasture_country$area <- pasture_country$area*1000  #CHANGE UNITS FOR PASTURE AREA FROM THOUSANDS OF HECTARES TO HECTARES
-
-
-# Address outliers for pasture --------
 
 # # explore pasture data visually
 #  p <- ggplot(pasture_country, aes(x=year, y=area, color=country)) + geom_line()
@@ -439,7 +427,7 @@ pasture_country[pasture_country$country=="Australia",]$area <-
   aus_cumulative_conversion
 
 
-# USSR & Former USSR Countriy Pasture adjustments
+# Adjust USSR and Former USSR Pasture --------
 
 #pasture area for former soviet countries jumps 10% from 326500000 in 1991 to 360407400 in 1992 post-dissolution. 
 # Although in % terms, this is less than in some other countries, the timing is worrying and the absolute change is very large
@@ -525,6 +513,7 @@ pasture_country_clean <- pasture_country %>%
   bind_rows(tibble(country = rep("USSR",56), year = c(1961:2016), area = rep(NA, 56))) #add NA USSR rows to join later with USSR production data
 
 
+
 #RETURN HERE explore and adjust Ethiopia and Eritrea data
 
 
@@ -541,7 +530,7 @@ combined_country <-
   rename("m_protein_pc"=protein_pc, "m_cons_total"=cons_total, "m_cons_pc_kg"=cons_pc_kg, "m_cons_pc_cal"=cons_pc_cal) %>%  #rename beef cons variables
   full_join(select(filter(cons_country, item=="Milk - Excluding Butter"),  -item)) %>% #merge with dairy consumption vars
   rename("d_protein_pc"=protein_pc, "d_cons_total"=cons_total, "d_cons_pc_kg"=cons_pc_kg, "d_cons_pc_cal"=cons_pc_cal) %>%  #rename dairy cons variables
-  full_join(select(filter(stocks_country, item=="cattle"), -item)) %>% #merge with stocks
+  full_join(select(filter(cattle_stocks_country, item=="cattle"), -item)) %>% #merge with stocks
   full_join(minor_crosswalk) %>% #merge with minor groups
   full_join(major_crosswalk) %>% #merge with major groups
   full_join(climate_income_categories) #merge with cliamte categories
@@ -565,8 +554,8 @@ milk_prod_country <- left_join(milk_prod_country, major_crosswalk)
 pasture_country <- left_join(pasture_country, minor_crosswalk)
 pasture_country <- left_join(pasture_country, major_crosswalk)
 
-stocks_country <- left_join(stocks_country, minor_crosswalk)
-stocks_country <- left_join(stocks_country, major_crosswalk)
+cattle_stocks_country <- left_join(cattle_stocks_country, minor_crosswalk)
+cattle_stocks_country <- left_join(cattle_stocks_country, major_crosswalk)
 
 ############## Recode   ##############
 ### Recode country names for to make names consistent over time, despite historical country name changes
@@ -686,7 +675,7 @@ write_csv(x = meat_prod_global, path = "data/clean_data/meat_prod_global.csv")
 write_csv(x = milk_prod_global, path = "data/clean_data/milk_prod_global.csv")
 write_csv(x = milk_yields_global, path = "data/clean_data/milk_yields_global.csv")
 write_csv(x = meat_yields_global, path = "data/clean_data/meat_yields_global.csv")
-write_csv(x = stocks_global, path = "data/clean_data/stocks_global.csv")
+write_csv(x = cattle_stocks_global, path = "data/clean_data/cattle_stocks_global.csv")
 write_csv(x = major_crosswalk, path = "data/clean_data/major_crosswalk.csv")
 write_csv(x = minor_crosswalk, path = "data/clean_data/minor_crosswalk.csv")
 write_csv(x = hyde, path = "data/clean_data/hyde.csv")
