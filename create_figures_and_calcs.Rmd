@@ -390,45 +390,32 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 
 
 
-## The decline in pasture has not been driven by changes in consumption, but rather by increases in livestock productivity
-- Growth in consumption of ruminant products has slowed, contributing to the decline in pasture area.
-
+# Productivity Gains Key to Peak Pasture
 
 ```{r Pct change values in production and consumption }
-# Total & annual percent change  in global consumption of meat and milk From 2000 to 2013
-#Consumption of bovine, mutton and goat MEAT
-meat_cons_change_2000 <- pct_chg(meat_cons_global , "cons_total", 2000, 2013)
 
-#Consumption of bovine, mutton and goat MILK
-milk_cons_change_2000 <- pct_chg(milk_cons_global, "cons_total", 2000, 2013)
+top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
 # Production of buffalo, cattle, goat, sheep MEAT 
-meat_prod_change_2000 <- pct_chg(meat_prod_global, "production", 2000, 2013)
+meat_prod_change_2000 <- pct_chg(filter(meat_prod_global_adjusted, item %in% top_grazing_animals), "m_prod", 2000, 2013)
 
 # Production of buffalo, cattle, goat, sheep MILK
-milk_prod_change_2000 <- pct_chg(milk_prod_global, "production", 2000, 2013)
+milk_prod_change_2000 <- pct_chg(milk_prod_global_adjusted, "d_prod", 2000, 2013)
 
 #From 1961 to 2013
-#Consumption of bovine, mutton and goat MEAT
-meat_cons_change_1961 <- pct_chg(meat_cons_global, "cons_total", 1961, 2013)
-
-#Consumption of bovine, mutton and goat MEAT
-milk_cons_change_1961 <- pct_chg(milk_cons_global, "cons_total", 1961, 2013)
 
 # Production of buffalo, cattle, goat, sheep MEAT 
 meat_prod_change_1961 <- pct_chg(meat_prod_global, "production", 1961, 2013)
 
 # Production of buffalo, cattle, goat, sheep MILK
 milk_prod_change_1961 <- pct_chg(milk_prod_global, "production", 1961, 2013)
-
-
-#From 1961 to 2000
-#Consumption of bovine, mutton and goat MEAT
-meat_cons_change_1961_2000 <- pct_chg(meat_cons_global, "cons_total", 1961, 2000)
-
-#Consumption of bovine, mutton and goat MEAT
-milk_cons_change_1961_2000 <- pct_chg(milk_cons_global, "cons_total", 1961, 2000)
 ```
+
+- Between 2000 and 2013, aggregate production of meat and milk from cattle, buffaol, goats and sheep—the most common grazing animals—rose by `r meat_prod_change_2000$percent_difference`% and by `r milk_prod_change_2000$percent_difference`%, respectively.
+
+
+
+
 
 ```{r Calculate Decadal Global Consumption & Yield Changes}
 base_year = 1961
@@ -508,10 +495,8 @@ ggsave(filename = "../outputs/decadal_change_consumption.pdf", plot = p, width =
 ```
 
 
-- Global consumption of ruminant meat and milk increased `r round(meat_cons_change_1961_2000$annual_percent_change,1)`% and `r round(milk_cons_change_1961_2000$annual_percent_change,1)`% annually before 2000, respectively, and
-`r round(meat_cons_change_2000$annual_percent_change,1)`% and `r round(milk_cons_change_2000$annual_percent_change, 1)`% annually since 2000. 
 
-- However, The decline in area neverthless coincided with dramatic increases in ruminant meat and milk production.
+
 
 ```{r Line Graph of index of global pasture, ruminant meat production, and ruminant milk production}
 base_year = 1961
@@ -546,7 +531,8 @@ p <- global_indices %>%
   scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
   labs(title = "Fig 2b) Global Beef and Milk Production Increased While Pasture Area Declined",
        y = paste0("Percent Change Since ", base_year),
-       x = "Year") +
+       x = "Year",
+       caption="Omitting Former Soviet Union") +
   scale_color_discrete(name = element_blank(),
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
@@ -1715,3 +1701,36 @@ combined_country %>%
   View()
   
 ```
+
+
+
+# Extra 
+```{r Global Consumption changes }
+#from 2000 to 2013
+# Total & annual percent change  in global consumption of meat and milk From 2000 to 2013
+#Consumption of bovine, mutton and goat MEAT
+meat_cons_change_2000 <- pct_chg(meat_cons_global , "cons_total", 2000, 2013)
+
+#Consumption of bovine, mutton and goat MILK
+milk_cons_change_2000 <- pct_chg(milk_cons_global, "cons_total", 2000, 2013)
+
+#From 1961 to 2000
+#Consumption of bovine, mutton and goat MEAT
+meat_cons_change_1961_2000 <- pct_chg(meat_cons_global, "cons_total", 1961, 2000)
+
+#Consumption of bovine, mutton and goat MEAT
+milk_cons_change_1961_2000 <- pct_chg(milk_cons_global, "cons_total", 1961, 2000)
+
+#From 1961 to 2013
+#Consumption of bovine, mutton and goat MEAT
+meat_cons_change_1961 <- pct_chg(meat_cons_global, "cons_total", 1961, 2013)
+
+#Consumption of bovine, mutton and goat MEAT
+milk_cons_change_1961 <- pct_chg(milk_cons_global, "cons_total", 1961, 2013)
+```
+
+- Global consumption of ruminant meat and milk increased `r round(meat_cons_change_1961_2000$annual_percent_change,1)`% and `r round(milk_cons_change_1961_2000$annual_percent_change,1)`% annually before 2000, respectively, and
+`r round(meat_cons_change_2000$annual_percent_change,1)`% and `r round(milk_cons_change_2000$annual_percent_change, 1)`% annually since 2000. 
+
+- However, The decline in area neverthless coincided with dramatic increases in ruminant meat and milk production.
+
