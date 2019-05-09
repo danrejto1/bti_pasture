@@ -50,7 +50,6 @@ livestock_density_global <- read_csv(file =   "../data/clean_data/livestock_dens
 major_crosswalk <- read_csv(file =   "../data/clean_data/major_crosswalk.csv")
 minor_crosswalk <- read_csv(file =   "../data/clean_data/minor_crosswalk.csv")
 hyde <- read_csv(file =   "../data/clean_data/hyde.csv")
-combined_country_change <- read_csv(file =   "../data/clean_data/combined_country_change.csv")
 
 fue <- read_csv(file = "../data/raw_data/fue_wirsenius_2010.csv", skip = 2) #feed use efficiency
 # I manually labelled regions in the FUE dataset by whether pasture area increased between 1961 and 2016, since the region names don't align well with the minor or major group names in our country-level dataset

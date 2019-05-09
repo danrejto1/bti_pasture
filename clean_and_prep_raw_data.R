@@ -640,54 +640,6 @@ meat_cons_global <- filter(cons_global, item %in% c("Bovine Meat", "Mutton & Goa
 milk_cons_global <- filter(cons_global, item %in% c("Butter, Ghee", "Cheese", "Cream","Milk - Excluding Butter"))
 
 
-############## Create change dataset --------
-
-# Create functions for calculating change for one variable}
-country_level_change_one_var <- function (x, var, first_yr, last_yr) {
-  
-  temp <- as.data.frame(x) %>% 
-    filter(year %in% c(first_yr,last_yr)) %>% #filter to years of interest
-    select(country, year, var) %>% #select variables of interest
-    spread(key = year, value = (var))
-  
-  final <- tibble(
-    temp[,1],
-    temp[,2],
-    temp[,3],
-    (temp[,3]-temp[,2])/temp[,2],
-    (temp[,3]-temp[,2])
-  )
-  
-  vars <- c("country", 
-            paste0(var, "_", first_yr),
-            paste0(var, "_", last_yr),
-            paste0(var, "_", "pct_chg"),
-            paste0(var, "_", "abs_chg"))
-  
-  final <- setNames(final, vars)
-  
-  return(final)
-}
-
-
-#Create df with country-level pasture area, income, region, beef consumption, and beef production levels, pct change over time, and abs. change over time
-
-#set baseline and end year for calculating change
-first_year <- 1993
-last_year <-  2013
-
-temp <- country_level_change_one_var(x = pasture_country, var = "area", first_yr = first_year, last_yr = last_year)
-
-temp <- left_join(temp, country_level_change_one_var(x = filter(meat_prod_country, item=="cattle"), var = "m_head", first_yr = first_year, last_yr = last_year))
-
-temp <- left_join(temp, country_level_change_one_var(x = filter(meat_prod_country, item=="cattle"), var = "m_yld", first_yr = first_year, last_yr = last_year))
-
-temp <- left_join(temp, country_level_change_one_var(x = filter(cons_country, item=="Bovine Meat"), var = "cons_total", first_yr = first_year, last_yr = last_year))
-
-temp <- left_join(temp,  country_level_change_one_var(x = filter(cons_country, item=="Bovine Meat"), var = "cons_pc_cal", first_yr = first_year, last_yr = last_year))
-
-combined_country_change <- left_join(temp, income_country)
-combined_country_change$inc_group_16_alt <- recode(combined_country_change$inc_group_16, "UM"="M", "LM" ="M")
 
   
 ############## Save tidy and cleaned data --------
@@ -696,10 +648,9 @@ write_csv(x = meat_cons_global, path = "data/clean_data/meat_cons_global.csv")
 write_csv(x = milk_cons_global, path = "data/clean_data/milk_cons_global.csv")
 write_csv(x = meat_prod_global, path = "data/clean_data/meat_prod_global.csv")
 write_csv(x = milk_prod_global, path = "data/clean_data/milk_prod_global.csv")
-write_csv(x = milk_yields_global, path = "data/clean_data/milk_yields_global.csv")
-write_csv(x = meat_yields_global, path = "data/clean_data/meat_yields_global.csv")
+write_csv(x = meat_prod_global_adjusted, path = "data/clean_data/meat_prod_global_adjusted.csv")
+write_csv(x = milk_prod_global_adjusted, path = "data/clean_data/milk_prod_global_adjusted.csv")
 write_csv(x = cattle_stocks_global, path = "data/clean_data/cattle_stocks_global.csv")
 write_csv(x = major_crosswalk, path = "data/clean_data/major_crosswalk.csv")
 write_csv(x = minor_crosswalk, path = "data/clean_data/minor_crosswalk.csv")
 write_csv(x = hyde, path = "data/clean_data/hyde.csv")
-write_csv(x = combined_country_change, path = "data/clean_data/combined_country_change.csv")
