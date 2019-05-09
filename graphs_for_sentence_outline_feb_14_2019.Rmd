@@ -18,46 +18,36 @@ opts_knit$set(root.dir = "../../Peak Pasture/data")
 ```
 
 ```{r load packages}
-library('tidyverse')
+require('tidyverse')
 require('ggthemes')
-library('scales')
-library('plotly')
-library('rworldmap')
+require('scales')
+require('plotly')
+require('rworldmap')
 require('rlang')
-require('cowplot')
-require('corrplot')
-require('plm')
 require('broom')
-require('stargazer')
-require('effects')
 ```
 
 ```{r Load datasets, message=FALSE}
-combined_country <- read_csv(file = "../data/clean_data/combined_tidy.csv")
-
-meat_cons_global <- read_csv(file =  "../data/clean_data/meat_cons_global.csv")
-milk_cons_global <- read_csv(file =  "../data/clean_data/milk_cons_global.csv")
-
-meat_prod_global <- read_csv(file =  "../data/clean_data/meat_prod_global.csv")
-milk_prod_global <- read_csv(file =  "../data/clean_data/milk_prod_global.csv")
-
-meat_prod_global_adjusted <- read_csv(file =  "../data/clean_data/meat_prod_global_adjusted.csv")
-milk_prod_global_adjusted <- read_csv(file =  "../data/clean_data/milk_prod_global_adjusted.csv")
-
-stocks_global <- read_csv(file =  "../data/clean_data/cattle_stocks_global.csv")
-hyde <- read_csv(file =   "../data/clean_data/hyde.csv")
-
-fue <- read_csv(file = "../data/raw_data/fue_wirsenius_2010.csv", skip = 2) #feed use efficiency
+combined_country <- read_csv(file = "data/clean_data/combined_tidy.csv") #country-level dataset with combined cattle data
+meat_cons_global <- read_csv(file =  "data/clean_data/meat_cons_global.csv") #global cattle, goat, mutton & pig meat consumption
+milk_cons_global <- read_csv(file =  "data/clean_data/milk_cons_global.csv") #global milk consumption
+meat_prod_global <- read_csv(file =  "data/clean_data/meat_prod_global.csv") #global herding animal production
+milk_prod_global <- read_csv(file =  "data/clean_data/milk_prod_global.csv") #global milk production
+meat_prod_global_adjusted <- read_csv(file = "data/clean_data/meat_prod_global_adjusted.csv") #global herding animal production, data adjusted
+milk_prod_global_adjusted <- read_csv(file =  "data/clean_data/milk_prod_global_adjusted.csv") #global milk production, data adjusted
+cattle_stocks_global <- read_csv(file =  "data/clean_data/cattle_stocks_global.csv") #global cattle stocks  #remove?
+hyde <- read_csv(file =   "data/clean_data/hyde.csv") #country level pasture data from hyde model
+fue <- read_csv(file = "data/raw_data/fue_wirsenius_2010.csv", skip = 2) #feed use efficiency
 # I manually labelled regions in the FUE dataset by whether pasture area increased between 1961 and 2016, since the region names don't align well with the minor or major group names in our country-level dataset
-
-pasture_projections <- read_csv(file="../data/pasture_projections/pasture_projections_for_graphing.csv")
+pasture_projections <- read_csv(file="data/pasture_projections/pasture_projections_for_graphing.csv") #data manually collected from published pasture projection analysis
 ```
 
 ```{r Set themes}
+#rtn
+
 #set rules for formatting graphs
 point <- format_format(big.mark = ",", decimal.mark = ".", scientific = FALSE)
 
-#RETURN TO CUSTOMIZE THEME
 # bti_theme <- theme_classic() +
 #                         theme(base_size = 20)
 # #theme(text = element_text(family = base_family, face = "plain", colour = "black", 
@@ -224,8 +214,8 @@ global_indices <- combined_country %>%
             d_cons = sum(d_cons_total, na.rm=T),  # milk consumption total
             d_prod = sum(d_prod, na.rm=T), #milk production
             area = sum(area, na.rm=T),  # pasture area
-            stocks = sum(stocks, na.rm=T)) %>% # stocks %>%
-  mutate(stocking = stocks/area) %>% #stocking density proxy
+            stocks = sum(stocks, na.rm=T)) %>% # cattle stocks %>%
+  mutate(stocking = stocks/area) %>% #cattle stocking density proxy
   dplyr::ungroup()%>%
   mutate(pct_chg_m_yld = pct_since_1961(m_yld),
          pct_chg_d_yld = pct_since_1961(d_yld),
@@ -236,13 +226,11 @@ global_indices <- combined_country %>%
          pct_chg_stocks = pct_since_1961(stocks))
 ```
 
-
 ```{r Create variables for ease of analysis and plotting}
 since_1961 <- c(1961, 1970, 1980, 1990, 2000, 2010, 2016)
 since_1961_2013 <- c(1961, 1970, 1980, 1990, 2000, 2010)
 since_1992 <- c(1992, 1995, 2000, 2005, 2010, 2015)
 since_2000<- c(2000,2005,2010, 2015)
-                        
 ```
 
 ```{r Create groups for graphs}
@@ -257,7 +245,6 @@ combined_country[combined_country$minor_group=="Northern America",]$group <- "No
 combined_country[combined_country$minor_group=="South America",]$group <- "Rest of South America"
 combined_country[combined_country$country =="China",]$group <- "China"
 combined_country[combined_country$country =="Brazil",]$group <- "Brazil"
-#combined_country[combined_country$country =="Saudi Arabia",]$group <- "Saudi Arabia"
 combined_country[combined_country$country =="Australia",]$group <- "Australia"
 
 # recode(combined_country$minor_group, "Central America" = "Rest of World",
@@ -275,8 +262,7 @@ biggest_pasture_countries <- c("United States of America", "Brazil", "China", "A
 ```
 
 
-# Section A: Global Increases in Livestock Productivity Have Reduced Pasture Area
-## After decades or centuries of growth, global pasture area has recently plateaued and even begun decreasing
+# Global Pasture Area Has Peaked
 
 ```{r Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
@@ -292,7 +278,7 @@ pasture_global_latest <- pasture_global$area[pasture_global$year==max(pasture_gl
 
 pasture_global_pct_fall <- (1-(pasture_global_latest/pasture_global_2000))*100    #percent difference between 2000 and latest year
 
-pasture_global_abs_fall <- pasture_global_2000 - pasture_global_latest   #absolute difference from 2000 to latest year
+pasture_global_abs_fall_2000_16 <- pasture_global_2000 - pasture_global_latest   #absolute difference from 2000 to latest year
 
 #avg. annual rate of pasture change in 16 years since 2000
 pasture_change_rate_post2000 <- -pasture_global_pct_fall/16
