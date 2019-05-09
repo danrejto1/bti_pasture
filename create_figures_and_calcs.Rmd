@@ -276,12 +276,12 @@ pasture_global_2000 <- pasture_global$area[pasture_global$year==2000]
 
 pasture_global_latest <- pasture_global$area[pasture_global$year==max(pasture_global$year, na.rm=T)]
 
-pasture_global_pct_fall <- (1-(pasture_global_latest/pasture_global_2000))*100    #percent difference between 2000 and latest year
+pasture_global_pct_fall_2000_16 <- (1-(pasture_global_latest/pasture_global_2000))*100    #percent difference between 2000 and latest year
 
 pasture_global_abs_fall_2000_16 <- pasture_global_2000 - pasture_global_latest   #absolute difference from 2000 to latest year
 
 #avg. annual rate of pasture change in 16 years since 2000
-pasture_change_rate_post2000 <- -pasture_global_pct_fall/16
+pasture_change_rate_post2000 <- -pasture_global_pct_fall_2000_16/16
 
 #avg. annual rate of pasture change since 1984 to 2000 (16 years before 2000)
 temp <- pasture_global %>% filter (year==1984|year==2000) #just get 1984 and 2000 values
@@ -295,7 +295,7 @@ pasture_change_1961_2000 <- pct_chg(pasture_global, "area", 1961, 2000)
 
 p <- ggplot(pasture_global) +
   geom_line(aes(x = year, y = area/1000000000)) +  #convert to billion ha 
-  labs(title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall,1), "% (", round(pasture_global_abs_fall/1000000,1), " Mha) since 2000"),  
+  labs(title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall_2000_16,1), "% (", round(pasture_global_abs_fall_2000_16/1000000,1), " Mha) since 2000"),  
        y = "Global Pasture Area (billion ha)", 
        x = "Year") +
   scale_x_continuous(breaks = since_1961) + 
@@ -317,9 +317,9 @@ australia_30_yr_rate <- filter(australia_og_pasture, Year %in% c(1985:2014)) %>%
 australia_2015_rate <- filter(australia_og_pasture, Year %in% c(2014,2015)) %>% mutate(pct_chg=pct(Value)) %>% summarize(rate=mean(pct_chg, na.rm=T)) %>% as.numeric()
 ```
 
-The 30-year rate of pasture change for Australia (from 1985 to 2014) was `r australia_30_yr_rate`%. The 2014-2015 rate of decline however was `australia_post_2015_rate`%. This is about 20 times the 30 year rate. 
+- The 30-year rate of pasture change for Australia (from 1985 to 2014) was `r australia_30_yr_rate`%. The 2014-2015 rate of decline however was `r australia_2015_rate`%. This is about `r round(australia_2015_rate / australia_30_yr_rate,2)` times the 30 year rate. 
 
-
+# Peak Pasture Is a World-Wide Trend
 ```{r Percent and number of countries where pasture declined }
 #Calculate % of global pasture area of countries that have declined from 1961-2016 and from 2000 to 2016. Calculate # of countries that have declined too for these time periods
 
@@ -335,11 +335,14 @@ n_countries_down_61_16 <- nrow(countries_down_61_16)
 
 # countries where pasture increased 1961-2000
 countries_up_61_00 <- combined_country %>% filter(year==2000, abs_chg_area>0) %>%select(country)
+n_countries_up_61_00 <- nrow(countries_up_61_00)
 
 # #countries where pasture declined 2000-2016
 countries_down_00_16 <- combined_country %>% select(country, year, abs_chg_area) %>% filter(year %in% c(2000,2016)) %>% spread(year, abs_chg_area) %>% filter(`2016`<`2000`) %>% select(country)
 
-countries_up_then_down <- intersect(countries_up_61_00,countries_down_00_16)
+#number & percent of countries where pasture incerased 61-2000 then declined 00-16
+n_countries_up_then_down <- nrow(intersect(countries_up_61_00,countries_down_00_16))
+p_countries_up_then_down <- round(n_countries_up_then_down/n_countries_up_61_00, 2)*100
 
 # #countries where pasture declined 2000-2016
 n_countries_down_or_flat_00_16 <- combined_country %>% select(country, year, abs_chg_area) %>% filter(year %in% c(2000,2016)) %>% spread(year, abs_chg_area) %>% filter(`2016`<=`2000`) %>% nrow()
@@ -356,10 +359,16 @@ p_countries_down_or_flat_00_16 <- round(n_countries_down_or_flat_00_16 / n_count
 # % of pasture represented by countries where pasture declined 2000-2016
 #p_area_down_00_16
 ```
-`r p_countries_down_or_flat_00_16`% of countries reported a net pasture decline between 2000 and 2016.
+- Pasture area was flat or declining in `r p_countries_down_or_flat_00_16`% of countries between 2000 and 2016.
  
- 
- 
+- Overall, pasture area in `r n_countries_down_61_16` countries (`r p_countries_down_61_16` of countries in the dataset today) is now below where it was in 1961
+
+- Altogether, since 2000, pasture area has contracted in `r n_countries_up_then_down` countries that saw pasture increase from 1961-2000. In other words, `r p_countries_up_then_down`% countries that saw pasture increased 1961-2000 saw it subsequently decrease. 
+
+
+
+
+
 ## The decline in pasture has not been driven by changes in consumption, but rather by increases in livestock productivity
 - Growth in consumption of ruminant products has slowed, contributing to the decline in pasture area.
 
