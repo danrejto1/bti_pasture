@@ -175,13 +175,12 @@ abs_since_1961 <- function(x) ((x-x[1]))
 ```{r Filter All Data}
 full_data  <- combined_country #save for exploratory analysis in appendix
 combined_country <- combined_country %>%
-  filter(country!="Eritrea",                #Eritrea became independent from Ethiopia in 1993 and... 
-         !str_detect(country, "Ethiopia"),  #Ethiopia's pasture area nearly dropped in half by~18 Mha (even when including Eritrea area)
-         !str_detect(country, "Iran"), #Omit Iran since its pasture suddenly drops ~17 Mha without explanation in 2005.
-         inc_group_16 %in% c("H", "UM", "LM", "L"), #omit small countries w/o income for plotting
+  filter(inc_group_16 %in% c("H", "UM", "LM", "L"), #omit small countries w/o income for plotting
          country !="Saudi Arabia") #omit because FAO omitted it in its pasture land use analysis, Ramankutty et al. discuss the FAO values as being orders of magnitude above subnational values, and because GDP data must be outlier
 
-#RETURN
+#earlier version of code omitted Iran: code for doing this is here
+# !str_detect(country, "Iran"), #Omit Iran since its pasture suddenly drops ~17 Mha without explanation in 2005.
+
 ```
 
 

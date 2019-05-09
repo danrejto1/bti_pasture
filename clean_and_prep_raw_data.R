@@ -2,7 +2,7 @@
 ### Original Author: Dan Rejto
 ### Last Update: May 6, 2019, Dan Rejto
 
-# Setup -------------------------------------------------------------------
+######## Setup -------------------------------------------------------------------
 
 #navigate to Peak Pasture Folder before starting as needed
 #setwd("~/Google Drive File Stream/My Drive/BTI Research/Food & Farming/Peak Pasture")
@@ -15,7 +15,7 @@ require('scales')
 require('plotly')
 require('rlang')
 
-# Load Raw Data -----------------------------------------------------------
+######## Load Raw Data -----------------------------------------------------------
 ###FAO Data
 # I downloaded csv from FAOSTAT from the noted datasets with following selections:
 # Regions > World > (List)  
@@ -91,7 +91,7 @@ climate_income_categories <- unique(select(climate_income_categories, -year))
 meat_prod_country$Element <- paste0(meat_prod_country$Element, "_", meat_prod_country$Unit)
 meat_prod_global$Element <- paste0(meat_prod_global$Element, "_", meat_prod_global$Unit)
 
-## Select Data of interest from All Files  ---------------------------------
+######## Select Data of interest from All Files  ---------------------------------
 #select variables of interest for country data and rename area to country for consistency as well
 cattle_stocks_country <- select(cattle_stocks_country,Country = Area, Element, Item, Year,  Value)
 cons_country <- select(cons_country, Country, Element, Item, Year,  Value)
@@ -108,7 +108,7 @@ milk_prod_global <- select(milk_prod_global, Element, Item, Year, Value)
 hyde <- filter(hyde, region=="Total")
 
 
-## Reshape variables --------------------------------------------------------
+######## Reshape variables --------------------------------------------------------
 # When there are multiple variables currently in 1 column, like yield and nubmer of milk animals, spread across multiple columns
 # Animal types are not a variable, but instead a subgroup of observation, so all animals remain under 1 "Item" column
 cattle_stocks_country <- spread(data = cattle_stocks_country, key = Element, value = Value)
@@ -133,7 +133,7 @@ gdp_pop_country <- select(gdp_pop_country, -`Country Code`, -`Series Code`) %>%
   spread(key = `Series Name`, value = values)
 
 
-## Rename variables ----------------
+######## Rename variables ----------------
 #make all var names lowercase for consistency
 dfs <- ls()
 
@@ -174,7 +174,7 @@ milk_prod_global <- rename(milk_prod_global, d_head = `milk animals`, d_prod = p
 
 
 
-## Recode factors ------------------
+######## Recode factors ------------------
 
 # Recode factor names for consistency and combine camels with other camelids (for which theres only data on Peru and Bolivia)
 level_key <- c("Meat indigenous, camel" = "camelids",
@@ -210,7 +210,7 @@ gdp_pop_country$year <- gsub("\\[.*?\\]", "", gdp_pop_country$year) #replace [te
  gdp_pop_country$year <- as.numeric(gdp_pop_country$year)
 
  
-## Restructure and Rename Crosswalk  ---------------------------
+######## Restructure and Rename Crosswalk  ---------------------------
 
 # prepare minor/major group merge
 # filter country-region crosswalk to create 2 groupings, major and minor regions 
@@ -244,7 +244,7 @@ fyug <- c("Yugoslav SFR", "Bosnia and Herzegovina", "Croatia", "Macedonia",
 minor_crosswalk$minor_group[which(minor_crosswalk$country %in% fyug)] <- "Former Yugoslavia"
 
 
-## Address outliers for meat and milk production --------
+######## Address outliers for meat and milk production --------
 
 # meat yields, productionn & head
 # Hong Kong, Belgium, Bosnia, Bulgaria, Czechia, Malaysia, Eswatini, Malta, Mauritius, MOntenegro, Réunion, Singapore, Slovakia, Suriname, and Saudi Arabaia 
@@ -287,7 +287,7 @@ milk_prod_country <- transform(milk_prod_country, d_prod = ave(d_prod, country, 
 
 
 
-## Address outliers for pasture --------
+######## Address outliers for pasture --------
 # Create convenience pasture dataset
 pasture_country <- filter(land_area_country, item == "pasture") %>% #filter land area to just pasture
   select(-item) #remove item column 
@@ -384,6 +384,7 @@ pasture_country[pasture_country$country=="Sudan (former)" & pasture_country$year
   (sudan_adjustment * sudan_area/total_new_sudan_area)
 
 
+######## ADjust Australia Pasture --------
 #For Australia, personal communication with FAO staff indicates that:
 
 #The drop between 2014 and 2015 was at a "rate more than 20 times faster than the previous 30-year average."
@@ -427,7 +428,7 @@ pasture_country[pasture_country$country=="Australia",]$area <-
   aus_cumulative_conversion
 
 
-# Adjust USSR and Former USSR Pasture --------
+######## Adjust USSR and Former USSR Pasture --------
 
 #pasture area for former soviet countries jumps 10% from 326500000 in 1991 to 360407400 in 1992 post-dissolution. 
 # Although in % terms, this is less than in some other countries, the timing is worrying and the absolute change is very large
@@ -507,15 +508,35 @@ new_fsu_pasture$country <- recode(new_fsu_pasture$country,
 #   complete(country, year) %>%   #create new empty observations for all years to enable joining
 #   left_join(new_fsu_pasture) #add new area data
 
-pasture_country_clean <- pasture_country %>%  
+pasture_country <- pasture_country %>%  
   filter(!country %in% fsu_countries) %>% #filter to all countries except FSU 
   bind_rows(filter(new_fsu_pasture, year!=1960)) %>%   #bind new FSU data except for 1961 from pasture
   bind_rows(tibble(country = rep("USSR",56), year = c(1961:2016), area = rep(NA, 56))) #add NA USSR rows to join later with USSR production data
 
 
 
-#RETURN HERE explore and adjust Ethiopia and Eritrea data
+######## Adjust Ethiopia and Eritrea --------
 
+# When Ethiopia PDR splits into Ethio[ia and Eritrea in 1993, total perm. pasture area across the countries declines more than 50%
+# I adopt the same approach as for Sudan, assuming that pasture area remains the same post-split and allocate the additional area across the countries proportionate to their reported pasture area post-split
+
+ethiopia_adjustment <- pasture_country[pasture_country$country=="Ethiopia PDR" & pasture_country$year==1992,]$area - 
+  summarize(group_by(filter(pasture_country, country %in% c("Ethiopia", "Eritrea"), year==1993), year), area = sum(area))$area
+
+# I allocate the adjustment in proportion to the 2 country's current pasture area
+eritrea_area <- pasture_country[pasture_country$country=="Eritrea" & pasture_country$year==2016,]$area
+ethiopia_area <- pasture_country[pasture_country$country=="Ethiopia" & pasture_country$year==2016,]$area
+total_new_area <- eritrea_area+ethiopia_area
+
+pasture_country[pasture_country$country=="Eritrea",]$area <- 
+  pasture_country[pasture_country$country=="Eritrea",]$area + 
+  (ethiopia_adjustment * eritrea_area/total_new_area)
+
+pasture_country[pasture_country$country=="Ethiopia",]$area <- 
+  pasture_country[pasture_country$country=="Ethiopia",]$area + 
+  (ethiopia_adjustment * ethiopia_area/total_new_area)
+
+pasture_country %>% filter(country %in% c("Ethiopia","Ethiopia PDR", "Eritrea")) %>% ggplot(aes(x=year, y=area, color=country))+geom_line()
 
 
 ######## Join country-level datasets in master datasets  -----------------------
@@ -523,14 +544,14 @@ pasture_country_clean <- pasture_country %>%
 #RETURN HERE TO change filterign to all ruminants, not just cattle
 #create one country-level dataset for beef and dairy with all variables except income and gdp
 combined_country <- 
-  full_join(pasture_country_clean,  #merge pasture area with...
+  full_join(pasture_country,  #merge pasture area with...
             select(filter(meat_prod_country, item=="cattle"), -item)) %>% #beef production vars
   full_join(select(filter(milk_prod_country, item=="cattle"),  -item)) %>% #dairy production vars
   full_join(select(filter(cons_country, item=="Bovine Meat"),  -item)) %>% #beef consumption vars
   rename("m_protein_pc"=protein_pc, "m_cons_total"=cons_total, "m_cons_pc_kg"=cons_pc_kg, "m_cons_pc_cal"=cons_pc_cal) %>%  #rename beef cons variables
   full_join(select(filter(cons_country, item=="Milk - Excluding Butter"),  -item)) %>% #merge with dairy consumption vars
   rename("d_protein_pc"=protein_pc, "d_cons_total"=cons_total, "d_cons_pc_kg"=cons_pc_kg, "d_cons_pc_cal"=cons_pc_cal) %>%  #rename dairy cons variables
-  full_join(select(filter(cattle_stocks_country, item=="cattle"), -item)) %>% #merge with stocks
+  full_join(select(filter(cattle_stocks_country, item=="cattle"), -item)) %>% #merge with cattle stocks
   full_join(minor_crosswalk) %>% #merge with minor groups
   full_join(major_crosswalk) %>% #merge with major groups
   full_join(climate_income_categories) #merge with cliamte categories
@@ -541,6 +562,7 @@ gdp_pop_country <- left_join(gdp_pop_country, select(income_country, country, "i
 combined_country <- left_join(combined_country, 
                                select(filter(gdp_pop_country, is.na(gdp)==F, is.na(iso_code)==F), -country),
                                       by=c("iso_code", "year"))
+
 
 cons_country <- left_join(cons_country, minor_crosswalk)
 cons_country <- left_join(cons_country, major_crosswalk)
@@ -566,7 +588,7 @@ combined_country$country <- recode(combined_country$country,
 
 
 
-# Merge In Country Income Class Data  ---------------------------
+############## Merge In Country Income Class Data  ---------------------------
 #countries that don't merge using iso
 fao_missing <- unique(anti_join(combined_country, income_country, by="iso_code")$country)
 income_missing <- unique(anti_join(income_country, combined_country, by="iso_code")$country)
@@ -605,9 +627,22 @@ combined_country$inc_group_16_alt <- as_factor(combined_country$inc_group_16_alt
 combined_country$inc_group_16_alt <- fct_relevel(combined_country$inc_group_16_alt, "H", "M", "L", "..")
 
 
-# Create functions--------
 
-#function for calculating change for one variable}
+
+############## Create filtered datasets for ease of use --------
+
+#global totals for animal production, based on adjusted country data from above. this is for all herding animals included
+meat_prod_global_adjusted <- summarize(group_by(meat_prod_country, year, item), m_head=sum(m_head, na.rm=T), m_prod=sum(m_productivity, na.rm=T) , m_yld=m_productivity/m_head)
+milk_prod_global_adjusted <- summarize(group_by(milk_prod_country, year, item), d_head=sum(d_head, na.rm=T), d_prod=sum(d_productivity, na.rm=T) , d_yld=d_productivity/d_head)
+
+#Global consumption of bovine, mutton and goat, and pig meat, and of dairy
+meat_cons_global <- filter(cons_global, item %in% c("Bovine Meat", "Mutton & Goat Meat", "Pigmeat"))
+milk_cons_global <- filter(cons_global, item %in% c("Butter, Ghee", "Cheese", "Cream","Milk - Excluding Butter"))
+
+
+############## Create change dataset --------
+
+# Create functions for calculating change for one variable}
 country_level_change_one_var <- function (x, var, first_yr, last_yr) {
   
   temp <- as.data.frame(x) %>% 
@@ -635,18 +670,6 @@ country_level_change_one_var <- function (x, var, first_yr, last_yr) {
 }
 
 
-
-# Create filtered datasets for ease of use --------
-
-#Consumption of bovine, mutton and goat meat
-meat_cons_global <- filter(cons_global, item %in% c("Bovine Meat", "Mutton & Goat Meat"))
-
-#Consumption of dairy products
-milk_cons_global <- filter(cons_global, item %in% c("Butter, Ghee", "Cheese", "Cream","Milk - Excluding Butter"))
-
-
-
-# Create change dataset --------
 #Create df with country-level pasture area, income, region, beef consumption, and beef production levels, pct change over time, and abs. change over time
 
 #set baseline and end year for calculating change
@@ -667,7 +690,7 @@ combined_country_change <- left_join(temp, income_country)
 combined_country_change$inc_group_16_alt <- recode(combined_country_change$inc_group_16, "UM"="M", "LM" ="M")
 
   
-  # Save tidy and cleaned data --------
+############## Save tidy and cleaned data --------
 write_csv(x = combined_country, path = "data/clean_data/combined_tidy.csv")
 write_csv(x = meat_cons_global, path = "data/clean_data/meat_cons_global.csv")
 write_csv(x = milk_cons_global, path = "data/clean_data/milk_cons_global.csv")
