@@ -304,12 +304,20 @@ p <- ggplot(pasture_global) +
 p
 
 ggsave(filename = "../outputs/global_pasture_area_trend.jpg", plot = p)
-
 ```
 - The decline of `r round(pasture_global_abs_fall/1000000,1)` is equivalent to `r round(pasture_global_abs_fall / pasture_change_1961_2000$difference, 2)`% of the change in pasture from 1961 to 2000.  
 
-- This contraction in pasture is corroborated by multiple models (HYDE Graph in Appendix)
-- While cropland area for feed crops has grown, this growth is small enough that the trend in pasture + feed cropland is similar to the pasture trend (Appendix graph  of the number of cattle globally per unit of agricultural land (combining pasture and cropland) 
+
+```{r Australia change in pasture rate }
+australia_og_pasture <- read_csv(file = "data/raw_data/fao_country_level_land_area.csv") %>% 
+  filter(Area=="Australia", Item=="Land under perm. meadows and pastures")
+
+australia_30_yr_rate <- filter(australia_og_pasture, Year %in% c(1985:2014)) %>% mutate(pct_chg=pct(Value)) %>% summarize(rate=mean(pct_chg, na.rm=T)) %>% as.numeric()
+
+australia_2015_rate <- filter(australia_og_pasture, Year %in% c(2014,2015)) %>% mutate(pct_chg=pct(Value)) %>% summarize(rate=mean(pct_chg, na.rm=T)) %>% as.numeric()
+```
+
+The 30-year rate of pasture change for Australia (from 1985 to 2014) was `r australia_30_yr_rate`%. The 2014-2015 rate of decline however was `australia_post_2015_rate`%. This is about 20 times the 30 year rate. 
 
 
 ```{r Percent and number of countries where pasture declined }
