@@ -365,7 +365,28 @@ p_countries_down_or_flat_00_16 <- round(n_countries_down_or_flat_00_16 / n_count
 
 - Altogether, since 2000, pasture area has contracted in `r n_countries_up_then_down` countries that saw pasture increase from 1961-2000. In other words, `r p_countries_up_then_down`% countries that saw pasture increased 1961-2000 saw it subsequently decrease. 
 
+- Following table shows countries where pasture increased the most with their pasture change from 2000 to 2016
+```{r countries where pasture increased most 2000-2016}
+pasture_change_by_country_00_16 <- combined_country %>% select(country, year, area) %>% filter(year %in% c(2000,2016)) %>% 
+  spread(key = year, value=area) %>% 
+  mutate(change_00_16=`2016`-`2000`) %>%
+  arrange(desc(change_00_16)) %>% 
+  head(5) %>% kable(caption = "Countries in Descending Order by Pasture Change from 2000-2016")
+```
 
+# Peak Pasture Holds Positive Environmental Potential
+```{r Forest area increase in europe}
+forest_change_eu <- read_csv(file = "data/clean_data/land_area.csv") %>% #load land use data
+  filter(major_group=="Europe", item=="forest", year %in% c(1990,2015)) %>%  #filter to Europe forest b/t 1990 & 2015
+  mutate(year=as.factor(year)) %>% 
+  group_by(year) %>% 
+  summarize(forest_area=sum(area, na.rm=T))
+
+thousand_to_million=1/1000
+eu_forest_abs_chg <- (forest_change_eu[2,2] - forest_change_eu[1,2])*thousand_to_million #calculate change
+eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_change_eu[1,2])*100 #calculate pct change
+```
+- In the 25 years between 1990 and 2015, the area of forest in Europe, a region that has experienced some of the most significant declines in pasture, has increased by about `r round(eu_forest_abs_chg,2)` million hectares (or `r eu_forest_pct_chg`%).
 
 
 
