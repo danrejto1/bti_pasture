@@ -690,12 +690,49 @@ p
 #   select(year, group, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>% #select just yields and stocking to graph
 ```
 
-- Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)`% since 1961
+- Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)*100`% since 1961
+
+
+```{r Calculation of Extra land needed if efficiency were at 1961 levels }
+#calcualte global meat and dairy producgtion per hectare for 1961 and 2013
+m_prod_per_ha_1961 <- combined_country %>% filter(year==1961) %>% group_by(year) %>% summarize(tot = sum(m_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
+d_prod_per_ha_1961 <- combined_country %>% filter(year==1961) %>% group_by(year) %>% summarize(tot = sum(d_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
+m_prod_per_ha_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot = sum(m_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
+d_prod_per_ha_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot = sum(d_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
+
+#calculate total meat and dairy production in 2013
+m_production_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot=sum(m_prod, na.rm=T))%>% select(tot)
+d_production_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot=sum(d_prod, na.rm=T)) %>% select(tot)
+
+#pct difference in 1961 and 2013 production per hectare
+beef_pct_chg_prod_per_ha_61_13 <- (m_prod_per_ha_2013-m_prod_per_ha_1961)/m_prod_per_ha_1961
+milk_pct_chg_prod_per_ha_61_13 <- (d_prod_per_ha_2013-d_prod_per_ha_1961)/d_prod_per_ha_1961
+
+#calculate extra land needed to produce 2013 meat and dairy with 1961 production/hectare levels
+m_extra_land <- (m_production_2013 / m_prod_per_ha_1961) - (m_production_2013 / m_prod_per_ha_2013) #extra land assuming its all for beef
+d_extra_land <- (d_production_2013 / d_prod_per_ha_1961) - (d_production_2013 / d_prod_per_ha_2013) #extra land assuming its all for milk
+
+min_extra_land <- min(m_extra_land, d_extra_land) #get minimum of the two values above to give a conservative estimate
+
+#hectares to billion hectares conversion
+ha_to_bha <- 1/1000000000
+
+total_pasture_2013 <- pasture_global[pasture_global$year==2013,]$area
+min_pct_extra_land <- min_extra_land/total_pasture_2013
+```
+
+- In 2013, approximately `r round(beef_pct_chg_prod_per_ha_61_13, 2)*100`% and `r round(milk_pct_chg_prod_per_ha_61_13, 2)*100`%   more cattle meat and dairy was produced for each hectare of pasture than in 1961.
+
+- If the efficiency of the global cattle system was the same in 2016 as it was in 1961, about `round(min_extra_land*ha_to_bha,2)` billion more hectares of pasture would be required to support the same level of production.
+
+- X% more pasture would be needed to support the same level of production as today without the productivity gains seen since 1961  This equates to `r (m_extra_land+d_extra_land)/1000000000` billion hectares.
+ 
+- For every 10% increase in beef and dairy yields, pasture area generally declines X-Y% (Appendix of regression analyses). 
 
 
 
 
-- The number of animals per area of pasture has increased as well, reflecting the shift to more intensive grazing, greater animal confinement, and other forms of intensification.
+
 
 
 
@@ -1088,8 +1125,6 @@ combined_country %>%
 ```
 
 
-- These pasture increases, at the most fundamental level, were driven by a a high rise in production (driven by domestic or global demand) relative to the rise in productivity. Areas where pasture contracted had a lower relative increases in production.
-
 ```{r Dumbell plot of change in yields and production for top countries}
 # Fig ) Line graph of area, consumption and yield index (aka the change in these values since 1961) for select regions to contrast trends for countries where pasture grew and those where it didn’t. The regions selected could be China, Brazil, US and Western Europe
 # p <- combined_country %>%
@@ -1157,6 +1192,7 @@ ggplot(plot_dat, aes(y=country, x=`1961`, xend=`2013`, color=`Pasture Expanded`)
 # 
 # ggplotly(p)
 ```
+
 ```{r Barchart of percent change in production divided by percent change in yield for top countries}
 #% change in production  divided by % change in yield chart
 p <- combined_country %>%
@@ -1311,33 +1347,8 @@ p
 
 
 
-## Without these productivity gains, more pasture land would be needed
-```{r Calculation of Extra land needed if efficiency were at 1961 levels }
-m_prod_per_ha_1961 <- combined_country %>% filter(year==1961) %>% group_by(year) %>% summarize(tot = sum(m_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
-d_prod_per_ha_1961 <- combined_country %>% filter(year==1961) %>% group_by(year) %>% summarize(tot = sum(d_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
-m_prod_per_ha_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot = sum(d_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
-d_prod_per_ha_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot = sum(d_prod, na.rm=T)/sum(area, na.rm=T))%>% select(tot)
-m_production_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot=sum(m_prod, na.rm=T))%>% select(tot)
-d_production_2013 <- combined_country %>% filter(year==2013) %>% group_by(year) %>% summarize(tot=sum(m_prod, na.rm=T)) %>% select(tot)
-m_extra_land <- (m_production_2013 / m_prod_per_ha_1961) - (m_production_2013 / m_prod_per_ha_2013)
-d_extra_land <- (d_production_2013 / d_prod_per_ha_1961) - (d_production_2013 / d_prod_per_ha_2013)
-
-```
 
 
-- X% more pasture would be needed to support the same level of production as today without the productivity gains seen since 1961  This equates to `r (m_extra_land+d_extra_land)/1000000000` billion hectares.
- 
-- For every 10% increase in beef and dairy yields, pasture area generally declines X-Y% (Appendix of regression analyses). 
-
-
-
-
-# Section B: Challenges Ahead
-## If pasture productivity does not keep pace with demand growth, global pasture area could start to expand once again
-
-## Forecasts predict that the recent increases in meat and milk demand in lower income countries will continue, as well as the declines in demand in high income countries
-
-## With production shifting to lower productivity countries, productivity may not keep pace with demand. 
 ```{r Calculate share of global meat production occurring over time in countries with high, medium, and low productivity }
 #create column with quartile cut points for each year
 plot_dat <- combined_country %>%
@@ -1386,10 +1397,10 @@ p
 
 
 
+
 ## Yield growth in high income countries may be slowing
 
-
-```{r Yield Growht in High income countries by decade}
+```{r Yield Growth in High income countries by decade}
 base_year = 1961
 temp <-   combined_country %>%
   filter(year>= base_year, year<=2013) %>%
@@ -1483,12 +1494,8 @@ p
 ggsave(filename = "../outputs/projected_pasture_2010_2050.jpg", plot = p, height = 8, width = 8, units = "in")
 ```
 
-- Some forecasts predict pasture will decline, but these assume that livestock productivity will rise more quickly than it has over the past decades, an unlikely prospect without greater support for productivity growth from government, business and civil society.
 
 
-## Pasture growth is particularly likely in tropical and humid regions with high biodiversity and carbon stocks
-- Pasture area has slowly been shifting toward countries that are predominantly humid and tropical
-- Graph of change in pasture area by climate
 
 ```{r Pct of Global pasture area in Humid, Temperature and Arid climates in 1961-1971 and in 2003-2013}
 
@@ -1580,20 +1587,12 @@ theme(legend.title = element_blank())
 
 ```
 
+
 ## Most projections estimate that most pasture growth will occur in Sub Saharan Africa. 
 - Pasture growth in South America and E. Asia is expected to remain low, and to continue declining in North America as well as Russia & Central Asia (PBL 2017 & 2018).
 ```{r Regional Pasture Projections}
 #Could add a figure showing projected pasture change by region from the PBL/IMAGE model, which may be the most recent regionally disaggregated projection (WRI’s is just global)
 ```
-- I plan to add a figure of regional pasture projections, perhaps just from the Message-Globiom model which modelers have chosen as the "marker" model for the middle-of-the-road scenario.
-
-
-## Tropical pasture expansion poses a great threat to biodiversity 
-
-## Land conversion in tropical forests also has a large impact on climate
-
-## Accelerated productivity growth, alongside reductions in ruminant meat and milk demand, is a key component to avoiding global pasture area expansion and the biodiversity and climate impacts this would cause.
-- Refernce to above graph of pasture projections that shows high productivity estimates compared to others.
 
 
 
@@ -1609,16 +1608,9 @@ theme(legend.title = element_blank())
 ```
 
 
+
+
 # Exploratory Analysis Appendices
-
-
-```{r Correlation Plot}
-#RETURN HERE TO CREATE CROSS-SECTIONAL CORRELATION PLOT FOR 2013 with % change in pasture area, gdp, gdp pc, pop, m&d production, m&d consumption, m&d yield, stock)
-
-
-#Corr plan  WITH PANEL DATA (year, pasture area, log(gdp), log(gdp pc), pop, m&d production, m&d consumption, m&d yield, stock)
-```
-
 
 ```{r All countries total  change in pasture vs. total pct change in yields}
 p <- combined_country %>%
@@ -1717,12 +1709,6 @@ ggplotly(p)
 combined_country %>% filter(minor_group =="Former Soviet Union") %>% 
   ggplot(aes(year, area, color=country)) + geom_line()
 ```
-
-
-```{r Bubble chart w/ minor-regions in a 2x2 grid based on their beef yields (one axis) and percent change in beef demand/production in past 10 years }
-
-```
-
 
 
 ```{r exploratory look at gdp for mioddle income countries}
