@@ -484,14 +484,45 @@ p <- decadal_cons_yld_changes %>%
   filter(Variable == "Consumption") %>% #filter to just consumption variable. can be removed to show all variables
   ggplot(aes(x=Period, y=as.numeric(`Annual Percent Change`))) +
     geom_col(aes(fill=Variable,group=Variable), position = "dodge")+
-  labs(title = "Fig 2a) Global Meat Consumption Growth Has Slowed While Dairy Has Not",
+  labs(title = "Global Meat Consumption Growth Has Slowed While Dairy Has Not",
        y = paste0("Annual Percent Change"),
        x = "Period")+
     theme_hc() +
-    facet_wrap(Product~.) #uncomment and delete above line to show all vars
+    facet_wrap(Product~.) 
 
-p
+#p
 ggsave(filename = "../outputs/decadal_change_consumption.pdf", plot = p, width = 8, height=8)
+```
+
+```{r beef and cattle milk demand}
+#calculate annual % change for each meat item
+pd1 <- meat_cons_global %>% 
+  select(year, cons_total, item) %>% #just calculate total consumption change
+  group_by(item) %>%  mutate(pct_chg = (cons_total/dplyr::lag(cons_total)-1)*100) #annual pct change by animal
+
+#calculate annual % change for each dairy
+pd2 <- milk_cons_global %>% 
+  select(year, cons_total, item) %>% #just calculate total consumption change
+  group_by(item) %>%  mutate(pct_chg = (cons_total/dplyr::lag(cons_total)-1)*100) #annual pct change by animal
+
+pd <- bind_rows(pd1, pd2)
+
+p <- pd %>% 
+  filter(item %in% c("Bovine Meat", "Milk - Excluding Butter")) %>%  #just graph for beef &milk
+  ggplot(aes(x=year, y=pct_chg/100, color=item))+
+  geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
+  geom_point(alpha=.2) + 
+  labs(title = "Global Meat Consumption Growth Has Notably Slowed",
+       y = paste0("Annual Percent Change"),
+       x = "Year") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = since_1961) +
+    theme_hc()+
+  theme(legend.position = "none")+
+  facet_wrap(item~.)
+p
+
+ggsave(filename = "../outputs/annual_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
 ```
 
 
