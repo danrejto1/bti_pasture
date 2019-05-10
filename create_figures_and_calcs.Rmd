@@ -530,7 +530,7 @@ ggsave(filename = "../outputs/annual_beef_milk_consumption_change.pdf", plot = p
 base_year = 1961
 global_indices <- combined_country %>%
   filter(minor_group != "Former Soviet Union") %>%  #omit USSR and former USSR
-  filter(year>= base_year, year<=2013) %>%
+  #filter(year>= base_year, year<=2013) %>%
   group_by(year) %>%
   summarize(m_yld = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T),  #beef yield
             m_cons = sum(m_cons_total, na.rm=T),  # beef consumption total
@@ -556,7 +556,7 @@ global_d_yld_pct_chg_61_13 <- round( (filter(global_indices, year==2013)$pct_chg
 
 - Cattle, the most dominant user of pasture globally, saw meat and milk yields grow `r global_m_yld_pct_chg_61_13`% and `r global_d_yld_pct_chg_61_13`% since 1961.
 
-```{r Line Graph of pct change in beef and milk yields and stocking density globally}
+```{r Line Graph of pct change in beef and cattle milk yields and stocking density globally}
 p <- global_indices %>%
   select(year, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>%
   gather(key = "Variable", value = "value",  -year) %>%
@@ -567,17 +567,17 @@ p <- global_indices %>%
        x = "Year",
        caption="Omitting Former Soviet Union") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_x_continuous(breaks = since_1961) +
+  scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
   scale_color_discrete(name = element_blank(),
                        breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
                        labels=c("Milk Yields", "Beef Yields", "Number of Cattle per Pasture Hectare")) +
   theme_hc()
 
-#p
+p
 ggsave(filename = "outputs/beef_milk_global_yields_pct_chg.pdf", plot = p, width = 8, height=8)
 ```
 
-```{r Line Graph of index of global pasture, cattle meat production, and cattle milk production}
+```{r Line Graph of pct chnage in global pasture, beef production, and cattle milk production}
 p <- global_indices %>%
   select(year, pct_chg_m_prod, pct_chg_d_prod, pct_chg_area, pct_chg_stocks) %>%
   gather(key = "Variable", value = "value",  -year) %>%
@@ -592,48 +592,18 @@ p <- global_indices %>%
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
   theme_hc()
-#p
+p
 ggsave(filename = "outputs/beef_milk_global_production_pct_chg.pdf", plot = p, width = 8, height=8)
 ```
 
 
 
-
-- As pasture area has declined from 2000 to 2016, production of cattle meat and milk products has increased `r round(meat_prod_change_2000$percent_difference, 1)`% and `r round(milk_prod_change_2000$percent_difference, 1)`%, respectively. 
-
-## The livestock revolution - shifting from extensive to intensive production - has led to large productivity gains that enabled this decoupling. 
-
-- Productivity is comprised of slaughter weight, dressing percentage, stocking rate, and the portion of animals raised slaughtered each year (combining turnover with metrics of animal health). Feed use efficiency is another productivity metric
-- Sidebar/box with productivity definitions.
-
-## Meat and milk productivity have increased in all major livestock production regions
-```{r Global meat and milk productivity changes}
-# p <- global_indices %>%
-#   select(year, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>%
-#   gather(key = "Variable", value = "value",  -year) %>%
-#   ggplot()+
-#     geom_line(aes(x=year, y=(value-1)*100, color=Variable))+
-#     scale_x_continuous(breaks = since_1961) +
-#     labs(title = "Fig 3) Global Beef and Milk Productivity Increases Key to Pasture Decline",
-#          y = "Percent Change since 1961",
-#          x = "Year") +
-#     scale_color_discrete(name = element_blank(),
-#                         breaks=c("pct_chg_m_yld", "pct_chg_d_yld", "pct_chg_stocking"),
-#                          labels=c("Beef Yields", "Milk Yields", "Cattle Stocks per Unit Pasture")) +
-#     theme_hc()
-# p
-```
-
-
-```{r Calculate change in  meat & milk yields and stocking by group}
+```{r Calculate change in  meat & milk yields and stocking by geographic group}
 # set baseline year
 baseline_year = 1961
 
 regional_indices <- combined_country %>%
-  filter(group !="Former Soviet Union", #omits former soviet union becuase of data consistency problems
-         !str_detect(country, "Hong Kong"),# omit hong kong which is an outlier in yields
-         year >= baseline_year) %>%   #limit to years after baseline
-  filter(group !="Saudi Arabia") %>% #omits Saudi Arabia becuase of data consistency problems especially in 1970s and early 80s
+  filter(group !="Former Soviet Union") %>% 
   group_by(year, group) %>%
   summarize(m_yld = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T),  #regional beef yield
             d_yld = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T),  #regional milk yield
@@ -650,7 +620,15 @@ regional_indices <- combined_country %>%
          pct_chg_d_cons = pct_since_1961(d_cons),
          pct_chg_area = pct_since_1961(area),
          pct_chg_stocking = pct_since_1961(stocking))
+
+australia_beef_yld<- filter(regional_indices, year==2013, group=="Australia")$m_yld
+africa_beef_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group=="Africa")$m_yld / australia_beef_yld),2)*100
+brazil_beef_yld_pct_lower_aus <- round(1- (filter(regional_indices, year==2013, group=="Brazil")$m_yld / australia_beef_yld), 2)*100
+china_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group=="China")$m_yld / australia_beef_yld), 2)*100
 ```
+
+- For instance, beef yields in Africa, Brazil, and China are all substantially lower than in higher-income Australia— `r africa_beef_yld_pct_lower_aus)`%, `r brazil_beef_yld_pct_lower_aus`% and `r china_beef_yld_pct_lower_aus` % less, respectively.
+
 
 ```{r Graph change in  meat & milk yields and stocking by group}
 
@@ -710,8 +688,10 @@ p
 # p <- regional_indices %>% 
 #   filter(group !="Saudi Arabia") %>% #omits Saudi Arabia becuase of data consistency problems especially in 1970s and waerly 80s
 #   select(year, group, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>% #select just yields and stocking to graph
-
 ```
+
+- Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)`% since 1961
+
 
 
 
