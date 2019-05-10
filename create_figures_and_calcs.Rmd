@@ -491,7 +491,7 @@ p <- decadal_cons_yld_changes %>%
     facet_wrap(Product~.) 
 
 #p
-ggsave(filename = "../outputs/decadal_change_consumption.pdf", plot = p, width = 8, height=8)
+ggsave(filename = "../outputs/decadal_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
 ```
 
 ```{r beef and cattle milk demand}
@@ -526,10 +526,7 @@ ggsave(filename = "../outputs/annual_beef_milk_consumption_change.pdf", plot = p
 ```
 
 
-
-
-
-```{r Line Graph of index of global pasture, ruminant meat production, and ruminant milk production}
+```{r Calculate pct change in global cattle meat and milk yields, production and consumption}
 base_year = 1961
 global_indices <- combined_country %>%
   filter(minor_group != "Former Soviet Union") %>%  #omit USSR and former USSR
@@ -553,7 +550,34 @@ global_indices <- combined_country %>%
          pct_chg_stocking = pct_since_1961(stocking),
          pct_chg_stocks = pct_since_1961(stocks))
 
+global_m_yld_pct_chg_61_13 <- round( (filter(global_indices, year==2013)$pct_chg_m_yld-1)*100, 2)
+global_d_yld_pct_chg_61_13 <- round( (filter(global_indices, year==2013)$pct_chg_d_yld-1)*100, 2)
+```
 
+- Cattle, the most dominant user of pasture globally, saw meat and milk yields grow `r global_m_yld_pct_chg_61_13`% and `r global_d_yld_pct_chg_61_13`% since 1961.
+
+```{r Line Graph of pct change in beef and milk yields and stocking density globally}
+p <- global_indices %>%
+  select(year, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>%
+  gather(key = "Variable", value = "value",  -year) %>%
+  ggplot()+
+    geom_line(aes(x=year, y=(value-1), color=Variable))+  #adjust pcts to be centered around 0
+    labs(title = "Yields and Stocking Density Have Increased Globally",
+       y = paste0("Percent Change Since ", base_year),
+       x = "Year",
+       caption="Omitting Former Soviet Union") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = since_1961) +
+  scale_color_discrete(name = element_blank(),
+                       breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
+                       labels=c("Milk Yields", "Beef Yields", "Number of Cattle per Pasture Hectare")) +
+  theme_hc()
+
+#p
+ggsave(filename = "outputs/beef_milk_global_yields_pct_chg.pdf", plot = p, width = 8, height=8)
+```
+
+```{r Line Graph of index of global pasture, cattle meat production, and cattle milk production}
 p <- global_indices %>%
   select(year, pct_chg_m_prod, pct_chg_d_prod, pct_chg_area, pct_chg_stocks) %>%
   gather(key = "Variable", value = "value",  -year) %>%
@@ -568,8 +592,11 @@ p <- global_indices %>%
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
   theme_hc()
-p
+#p
+ggsave(filename = "outputs/beef_milk_global_production_pct_chg.pdf", plot = p, width = 8, height=8)
 ```
+
+
 
 
 - As pasture area has declined from 2000 to 2016, production of cattle meat and milk products has increased `r round(meat_prod_change_2000$percent_difference, 1)`% and `r round(milk_prod_change_2000$percent_difference, 1)`%, respectively. 

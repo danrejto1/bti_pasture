@@ -1,6 +1,6 @@
 ### Title: Creating tidy (i.e. long) consistently labeled data files for pasture
 ### Original Author: Dan Rejto
-### Last Update: May 6, 2019, Dan Rejto
+### Last Update: May 9, 2019, Dan Rejto
 
 ######## Setup -------------------------------------------------------------------
 
@@ -541,7 +541,6 @@ pasture_country %>% filter(country %in% c("Ethiopia","Ethiopia PDR", "Eritrea"))
 
 ######## Join country-level datasets in master datasets  -----------------------
 
-#RETURN HERE TO change filterign to all ruminants, not just cattle
 #create one country-level dataset for beef and dairy with all variables except income and gdp
 combined_country <- 
   full_join(pasture_country,  #merge pasture area with...
@@ -563,6 +562,7 @@ combined_country <- left_join(combined_country,
                                select(filter(gdp_pop_country, is.na(gdp)==F, is.na(iso_code)==F), -country),
                                       by=c("iso_code", "year"))
 
+land_area_country <- left_join(land_area_country, major_crosswalk)
 
 cons_country <- left_join(cons_country, minor_crosswalk)
 cons_country <- left_join(cons_country, major_crosswalk)
@@ -632,16 +632,14 @@ combined_country$inc_group_16_alt <- fct_relevel(combined_country$inc_group_16_a
 ############## Create filtered datasets for ease of use --------
 
 #global totals for animal production, based on adjusted country data from above. this is for all herding animals included
-meat_prod_global_adjusted <- summarize(group_by(meat_prod_country, year, item), m_head=sum(m_head, na.rm=T), m_prod=sum(m_productivity, na.rm=T) , m_yld=m_productivity/m_head)
-milk_prod_global_adjusted <- summarize(group_by(milk_prod_country, year, item), d_head=sum(d_head, na.rm=T), d_prod=sum(d_productivity, na.rm=T) , d_yld=d_productivity/d_head)
+meat_prod_global_adjusted <- summarize(group_by(meat_prod_country, year, item), m_head=sum(m_head, na.rm=T), m_prod=sum(m_prod, na.rm=T) , m_yld=m_prod/m_head)
+milk_prod_global_adjusted <- summarize(group_by(milk_prod_country, year, item), d_head=sum(d_head, na.rm=T), d_prod=sum(d_prod, na.rm=T) , d_yld=d_prod/d_head)
 
 #Global consumption of bovine, mutton and goat, and pig meat, and of dairy
 meat_cons_global <- filter(cons_global, item %in% c("Bovine Meat", "Mutton & Goat Meat", "Pigmeat"))
 milk_cons_global <- filter(cons_global, item %in% c("Butter, Ghee", "Cheese", "Cream","Milk - Excluding Butter"))
 
 
-
-  
 ############## Save tidy and cleaned data --------
 write_csv(x = combined_country, path = "data/clean_data/combined_tidy.csv")
 write_csv(x = meat_cons_global, path = "data/clean_data/meat_cons_global.csv")
@@ -654,3 +652,4 @@ write_csv(x = cattle_stocks_global, path = "data/clean_data/cattle_stocks_global
 write_csv(x = major_crosswalk, path = "data/clean_data/major_crosswalk.csv")
 write_csv(x = minor_crosswalk, path = "data/clean_data/minor_crosswalk.csv")
 write_csv(x = hyde, path = "data/clean_data/hyde.csv")
+write_csv(x = land_area_country, path = "data/clean_data/land_area.csv")
