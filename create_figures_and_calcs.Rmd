@@ -264,7 +264,7 @@ biggest_pasture_countries <- c("United States of America", "Brazil", "China", "A
 
 # Global Pasture Area Has Peaked
 
-```{r Line Graph of global pasture area since 1961}
+```{r Fig 1 Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
   filter(is.na(area)==F) %>% 
   group_by(year) %>%
@@ -301,7 +301,7 @@ p <- ggplot(pasture_global) +
   scale_x_continuous(breaks = since_1961) + 
   theme_hc()   #highcharts theme
 
-p
+#p
 
 ggsave(filename = "../outputs/global_pasture_area_trend.jpg", plot = p)
 ```
@@ -391,9 +391,7 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 
 
 # Productivity Gains Key to Peak Pasture
-
 ```{r Pct change values in production and consumption }
-
 top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
 # Production of buffalo, cattle, goat, sheep MEAT 
@@ -412,9 +410,6 @@ milk_prod_change_1961 <- pct_chg(milk_prod_global, "production", 1961, 2013)
 ```
 
 - Between 2000 and 2013, aggregate production of meat and milk from cattle, buffaol, goats and sheep—the most common grazing animals—rose by `r meat_prod_change_2000$percent_difference`% and by `r milk_prod_change_2000$percent_difference`%, respectively.
-
-
-
 
 
 ```{r Calculate Decadal Global Consumption & Yield Changes}
@@ -479,7 +474,7 @@ decadal_cons_yld_changes <- tibble(
   )
 ```
 
-```{r Graph Decadal Global Consumption, Yield, and Total Productivity Changes}
+```{r Old Fig - Bar Graph Decadal Global Consumption, Yield, and Total Productivity Changes}
 p <- decadal_cons_yld_changes %>% 
   filter(Variable == "Consumption") %>% #filter to just consumption variable. can be removed to show all variables
   ggplot(aes(x=Period, y=as.numeric(`Annual Percent Change`))) +
@@ -491,10 +486,10 @@ p <- decadal_cons_yld_changes %>%
     facet_wrap(Product~.) 
 
 #p
-ggsave(filename = "../outputs/decadal_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
+ggsave(filename = "/outputs/decadal_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
 ```
 
-```{r beef and cattle milk demand}
+```{r Fig 7 Smooth Graph of Annual Pct change in beef and cattle milk demand}
 #calculate annual % change for each meat item
 pd1 <- meat_cons_global %>% 
   select(year, cons_total, item) %>% #just calculate total consumption change
@@ -556,7 +551,7 @@ global_d_yld_pct_chg_61_13 <- round( (filter(global_indices, year==2013)$pct_chg
 
 - Cattle, the most dominant user of pasture globally, saw meat and milk yields grow `r global_m_yld_pct_chg_61_13`% and `r global_d_yld_pct_chg_61_13`% since 1961.
 
-```{r Line Graph of pct change in beef and cattle milk yields and stocking density globally}
+```{r Old Fig - Line Graph of pct change in beef and cattle milk yields and stocking density globally}
 p <- global_indices %>%
   select(year, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>%
   gather(key = "Variable", value = "value",  -year) %>%
@@ -577,17 +572,18 @@ p
 ggsave(filename = "outputs/beef_milk_global_yields_pct_chg.pdf", plot = p, width = 8, height=8)
 ```
 
-```{r Line Graph of pct chnage in global pasture, beef production, and cattle milk production}
+```{r Fig 6 - Line Graph of pct chnage in global pasture, beef production, and cattle milk production}
 p <- global_indices %>%
   select(year, pct_chg_m_prod, pct_chg_d_prod, pct_chg_area, pct_chg_stocks) %>%
   gather(key = "Variable", value = "value",  -year) %>%
   ggplot()+
-    geom_line(aes(x=year, y=(value-1)*100, color=Variable))+
+    geom_line(aes(x=year, y=(value-1), color=Variable))+
   scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
-  labs(title = "Fig 2b) Global Beef and Milk Production Increased While Pasture Area Declined",
+  labs(title = "Production Has Increased While Pasture Area Has Plateaued",
        y = paste0("Percent Change Since ", base_year),
        x = "Year",
        caption="Omitting Former Soviet Union") +
+  scale_y_continuous(labels = scales::percent_format())+
   scale_color_discrete(name = element_blank(),
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
@@ -656,8 +652,8 @@ p <- regional_indices %>%
 #     facet_wrap(variable~., ncol = 1, strip.position = "right", dir = )
 
 p
-
-#Line Graph - Very Messy way to display data since there's a lot of noise. Better to do column or other graph that aggregates data cross years
+#########
+# - Line Graph-  Very Messy way to display data since there's a lot of noise. Better to do column or other graph that aggregates data cross years
 # base_year = 1961
 # 
 # temp <-   combined_country %>%
@@ -1126,6 +1122,7 @@ combined_country %>%
 
 
 ```{r Dumbell plot of change in yields and production for top countries}
+#####
 # Fig ) Line graph of area, consumption and yield index (aka the change in these values since 1961) for select regions to contrast trends for countries where pasture grew and those where it didn’t. The regions selected could be China, Brazil, US and Western Europe
 # p <- combined_country %>%
 #   filter(country %in% c(top_pasture_contraction$country, top_pasture_expansion$country),
