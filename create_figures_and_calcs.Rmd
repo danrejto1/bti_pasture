@@ -260,8 +260,8 @@ combined_country[combined_country$country =="Australia",]$group <- "Australia"
 biggest_pasture_countries <- c("United States of America", "Brazil", "China", "Australia", "Kazakhstan", "Saudi Arabia", "Mongolia", "Argentina", "Russia", "South Africa") #
 ```
 
-
-# Global Pasture Area Has Peaked
+#Calculations
+## Global Pasture Area Has Peaked
 
 ```{r Fig 1 Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
@@ -318,7 +318,7 @@ australia_2015_rate <- filter(australia_og_pasture, Year %in% c(2014,2015)) %>% 
 
 - The 30-year rate of pasture change for Australia (from 1985 to 2014) was `r australia_30_yr_rate`%. The 2014-2015 rate of decline however was `r australia_2015_rate`%. This is about `r round(australia_2015_rate / australia_30_yr_rate,2)` times the 30 year rate. 
 
-# Peak Pasture Is a World-Wide Trend
+## Peak Pasture Is a World-Wide Trend
 ```{r Percent and number of countries where pasture declined }
 #Calculate % of global pasture area of countries that have declined from 1961-2016 and from 2000 to 2016. Calculate # of countries that have declined too for these time periods
 
@@ -373,7 +373,7 @@ pasture_change_by_country_00_16 <- combined_country %>% select(country, year, ar
   head(5) %>% kable(caption = "Countries in Descending Order by Pasture Change from 2000-2016")
 ```
 
-# Peak Pasture Holds Positive Environmental Potential
+## Peak Pasture Holds Positive Environmental Potential
 ```{r Forest area increase in europe}
 forest_change_eu <- read_csv(file = "data/clean_data/land_area.csv") %>% #load land use data
   filter(major_group=="Europe", item=="forest", year %in% c(1990,2015)) %>%  #filter to Europe forest b/t 1990 & 2015
@@ -389,7 +389,7 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 
 
 
-# Productivity Gains Key to Peak Pasture
+## Productivity Gains Key to Peak Pasture
 ```{r Pct change values in production and consumption }
 top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
@@ -635,7 +635,7 @@ p <- regional_indices %>%
     labs(title="Change in Dairy and Beef Yields by Region (1961-2016)",
          x=element_blank(),
          y="Percent Increase Since 1961",
-         caption = "Omits Former Soviet Union") +
+         caption = "Omitting Former Soviet Union") +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
     #scale_x_continuous(breaks = since_1961) +
     theme(legend.title = element_blank(), legend.position = "none")+
@@ -676,7 +676,7 @@ p
 #   )
 
 # p <- regional_indices %>% 
-#   filter(group !="Saudi Arabia") %>% #omits Saudi Arabia becuase of data consistency problems especially in 1970s and waerly 80s
+#   filter(group !="Saudi Arabia") %>% #Omitting Saudi Arabia becuase of data consistency problems especially in 1970s and waerly 80s
 #   select(year, group, pct_chg_m_yld, pct_chg_d_yld, pct_chg_stocking) %>% #select just yields and stocking to graph
 ```
 
@@ -717,52 +717,16 @@ min_pct_extra_land <- min_extra_land/total_pasture_2013
 
 - X% more pasture would be needed to support the same level of production as today without the productivity gains seen since 1961  This equates to `r (m_extra_land+d_extra_land)/1000000000` billion hectares.
  
-- For every 10% increase in beef and dairy yields, pasture area generally declines X-Y% (Appendix of regression analyses). 
 
-
-## Pasture area shrank most where the rate of productivity growth was high relative to production growth, and expanded in areas where relative productivity growth was low.
-- Since 1961, Pasture area declined most in countries that are high-income today and expanded most in countries that are upper-middle income today
-```{r Fig 3 - Pasture Area Change since 1961 in Mha by Income Level}
-pasture_area_by_income <- combined_country %>%
-  filter(inc_group_16 !="..") %>%    #omits countries w/o income group - e.g. British Virgin Islands
-  group_by(year, inc_group_16) %>%
-  summarize(tot = sum(area, na.rm = T))
-#omits NA's - currently Czechoslovakia, Falkland Islands (Malvinas), French Guiana, Guadeloupe, Martinique, Mayotte, Montserrat, Niue, Norfolk Island, Pacific Islands Trust Territory, Réunion, Saint Helena 
-
-#create df with baseline pasture area (1961 area)
-temp <- pasture_area_by_income %>% filter(year==1961) %>% ungroup() %>% select(inc_group_16, "baseline"=tot) 
-
-#merge with pasture area by income group and subtract to get change since baseline
-pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp) %>%
-  mutate(change=tot-baseline)
-
-#create graph
-p <- ggplot(pasture_area_change_by_income) +
-  geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
-  labs(x="Year", y="Pasture Area (Mha)", 
-       title = "Pasture Rose for Upper-Middle & Fell for High Income Countries Since 1961", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
-  scale_x_continuous(breaks = since_1961) + 
-  scale_y_continuous(limits = c(-250,250)) + 
-  scale_color_hc(name ="Income Group",
-                       breaks=c("H", "UM", "LM", "L"),
-                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
-  theme_hc()
-
-p
-```
+# Figures
 
 ```{r Calculate Absolute and percent changes by income group}
 #create dataframe of absolute & perent change in yields, consumption, production and area by income group
 baseline_year = 1961
 
 income_indices <- combined_country %>%
-  filter(group !="Former Soviet Union", #omits former soviet union becuase of data consistency problems
-         !str_detect(country, "Hong Kong"),# omit hong kong which is an outlier in yields
-        country != "Equatorial Guinea",  #omit b/c of outlier gdp
-         country != "Republic of Korea", #omit b/c of outlier gdp
+  filter(group !="Former Soviet Union", #Omitting former soviet union becuase of data consistency problems
          year >= baseline_year) %>%   #limit to years after baseline
-  filter(group !="Saudi Arabia") %>% #omits Saudi Arabia becuase of data consistency problems especially in 1970s and early 80s
   group_by(year, inc_group_16) %>%
   summarize(m_yld = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T),  #beef yield in  tonnes/animal
             d_yld = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T),  # milk yield in  tonnes/animal
@@ -797,9 +761,92 @@ income_indices <- income_indices %>%
          abs_chg_d_prod = abs_since_1961(d_prod),
          abs_chg_area = abs_since_1961(area),
          abs_chg_gdp = abs_since_1961(gdp)) %>%
-  filter(inc_group_16 !="..", is.na(inc_group_16)==F) #omits countries w/o income group - e.g. British Virgin Islands
+  filter(inc_group_16 !="..", is.na(inc_group_16)==F) #Omitting countries w/o income group - e.g. British Virgin Islands
+```
+
+```{r Old Fig 3 - line graph abs change in pasture by income}
+pasture_area_by_income <- combined_country %>%
+  filter(inc_group_16 !="..") %>%    #Omitting countries w/o income group - e.g. British Virgin Islands
+  group_by(year, inc_group_16) %>%
+  summarize(tot = sum(area, na.rm = T))
+#Omitting NA's - currently Czechoslovakia, Falkland Islands (Malvinas), French Guiana, Guadeloupe, Martinique, Mayotte, Montserrat, Niue, Norfolk Island, Pacific Islands Trust Territory, Réunion, Saint Helena 
+
+#create df with baseline pasture area (1961 area)
+temp <- pasture_area_by_income %>% filter(year==1961) %>% ungroup() %>% select(inc_group_16, "baseline"=tot) 
+
+#merge with pasture area by income group and subtract to get change since baseline
+pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp) %>%
+  mutate(change=tot-baseline)
+
+#create graph
+p <- ggplot(pasture_area_change_by_income) +
+  geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
+  labs(x="Year", y="Pasture Area (Mha)", 
+       title = "Pasture Rose for Upper-Middle & Fell for High Income Countries Since 1961", 
+       caption = "Omitting Countries Missing World Bank Income Group") +
+  scale_x_continuous(breaks = since_1961) + 
+  scale_y_continuous(limits = c(-250,250)) + 
+  scale_color_hc(name ="Income Group",
+                       breaks=c("H", "UM", "LM", "L"),
+                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
+  theme_hc()
+
+p
+```
+
+```{r calculate percent change in pasture by income}
+pasture_by_income <- combined_country %>% select(country, year, inc_group_16, area) %>% 
+  group_by(year, inc_group_16) %>%
+  summarize(area = sum(area, na.rm=T))   #pasture area in hectares)
+  
+pasture_by_income <- pasture_by_income %>% group_by(inc_group_16) %>% #group just by income to make this work
+  mutate(pct_chg_area = pct_since_1961(area)) %>% 
+  filter(inc_group_16 !="..", is.na(inc_group_16)==F) #Omitting countries w/o income group - e.g. British Virgin Islands
+```
+
+
+```{r Fig 3 - Line graph pct change in pasture by income group}
+p <- pasture_by_income %>% 
+  filter(year<2017) %>% #dont show 2017 where there isnt reported pasture data yet
+  ggplot() +
+  geom_line(aes(x=year, y = (pct_chg_area-1), color = inc_group_16)) + 
+  labs(x="Year", y="Percent Change since 1961", 
+       title = "Pasture Growth is  Closely Tied to Economic Growth ", 
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
+  scale_x_continuous(breaks = since_1961) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
+  scale_color_discrete(name ="Income Group",
+                       breaks=c("H", "UM", "LM", "L"),
+                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
+  theme_hc()
+
+p
+
+# 
+# #create df with baseline pasture area (1961 area)
+# temp <- pasture_area_by_income %>% filter(year==1961) %>% ungroup() %>% select(inc_group_16, "baseline"=tot) 
+# 
+# #merge with pasture area by income group and subtract to get change since baseline
+# pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp) %>%
+#   mutate(change=tot-baseline)
+# 
+# #create graph
+# p <- ggplot(pasture_area_change_by_income) +
+#   geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
+#   labs(x="Year", y="Pasture Area (Mha)", 
+#        title = "Pasture Rose for Upper-Middle & Fell for High Income Countries Since 1961", 
+#        caption = "Omitting Countries Missing World Bank Income Group") +
+#   scale_x_continuous(breaks = since_1961) + 
+#   scale_y_continuous(limits = c(-250,250)) + 
+#   scale_color_hc(name ="Income Group",
+#                        breaks=c("H", "UM", "LM", "L"),
+#                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
+#   theme_hc()
+# 
+# p
 
 ```
+
 
 ```{r line graph of absolute yield change by income group}
 p <- income_indices %>% 
@@ -810,7 +857,7 @@ p <- income_indices %>%
   geom_line(aes(x=year, y=value*1000, color = inc_group_16)) +  #convert yields from tonnes to kg
   labs(x="Year", y="Change in Yields (kg product/animal)", 
        title = "Fig ) Yields Rose Everywhere, But Evenly", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels = point) + 
   scale_color_discrete(name ="Income Group",
@@ -835,7 +882,7 @@ p <- income_indices %>%
   geom_col(aes(x=reorder(inc_group_16, value), y=value*1000)) +  #convert yields from tonnes to kg
   labs(x="", y="Change in Yields 1961-2013 (kg product/animal)", 
        title = "Fig ) Yields Rose Everywhere, But Unevenly", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
     scale_y_continuous(labels = point) + 
  # # scale_color_discrete(name ="Income Group",
  #                       breaks=c("H", "UM", "LM", "L"),
@@ -861,7 +908,7 @@ p <-  ggplot(pd, aes(x = order, y=value-1)) + #order from least to greatest and 
   geom_bar(stat = "identity", show.legend = FALSE) +  
   labs(x="", y="% Change in Yields 1961-2013", 
        title = "Fig ) Yields Rose Everywhere, But Unevenly", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
     scale_y_continuous(labels = scales::percent) + 
   scale_x_continuous(
     breaks = pd$order,
@@ -905,7 +952,7 @@ p <- income_indices %>%
   geom_line(aes(x=year, y=value/1000, color = inc_group_16)) + #convert from tonnes to thousand tonnes
   labs(x="Year", y="Change in Total Production (thousand tonnes)", 
        title = "Fig )Production Rose Most Rapidly in Middle Income Countries Since 1961", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels=point)+
   scale_color_discrete(name ="Income Group",
@@ -930,7 +977,7 @@ p <- income_indices %>%
   geom_line(aes(x=year, y=pct_chg_gdp-1, color = inc_group_16)) +
   labs(x="Year", y="Change in GDP", 
        title = "Fig) GDP Rose Most Rapidly in Middle Income Countries Since 1961", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels=scales::percent) +
   scale_color_discrete(name ="Income Group",
@@ -955,7 +1002,7 @@ p <- income_indices %>%
   geom_line(aes(x=year, y=value-1, color = inc_group_16)) +
   labs(x="Year", y="% Change Since 1961", 
        title = "Fig) Emerging Economies Saw the Greatest Production, GDP and Pasture Growth", 
-       caption = "Omits Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels=scales::percent) +
   scale_color_discrete(name ="Income Group",
@@ -1290,7 +1337,7 @@ baseline_year = 1961
 
 #create df with baseline pasture area
 plot_dat <- combined_country %>%
-  filter(group !="Former Soviet Union") %>% #omits soviet union
+  filter(group !="Former Soviet Union") %>% #Omitting soviet union
   group_by(year, group) %>%
   summarize(tot = sum(area, na.rm = T)) 
 
