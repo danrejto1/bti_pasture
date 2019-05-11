@@ -998,6 +998,7 @@ ggsave(filename = "outputs/change_in_area_prod_gdp_by_income_group.png", p, widt
 
 
 - Pasture declined most in Australia, Mongolia, U.S., and Argentina, and increased most in China, Brazil, Saudi Arabia, and Niger.
+## Maps
 ```{r Fig A3 - Map of pasture area change by country since 1961 (in Mha)}
 viz <- combined_country %>%
   filter(year %in% c(2016)) %>%
@@ -1127,8 +1128,6 @@ do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",
 
 - The countries with the most rapidly growing pasture area since 2000 are `r head(arrange(pasture_chg_annual_00_16, desc(value))$country, 3)`.
 
-- The gr
-
 
 
 ```{r Table of Top Pasture Area Change Countries}
@@ -1257,7 +1256,7 @@ ggsave(filename = "outputs/pasture_pressure_top_countries.png", plot = p)
  Note: An exception to the pattern is Mongolia where pasture area declined for reasons other than productivity improvements
 
 - The regions where pasture contracted also had higher levels of other types of productivity than regions where pasture expanded
-```{r Graph of Feed Use Efficiency (beef/kg dry matter) for countries with top pasture area change or grouped by whether pasture expanded or contracted}
+```{r Fig 9 Graph of Feed Use Efficiency (beef/kg dry matter) for countries with top pasture area change or grouped by whether pasture expanded or contracted}
 
 p <- fue %>% rename("Beef" = cattle_beef, "Milk" = cattle_milk) %>% gather(variable, value, Beef, Milk) %>%
   ggplot(aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
@@ -1333,8 +1332,8 @@ ggsave(filename = "outputs/decadal_change_area_production.jpg", plot = p, width=
 ```
 
 
-## There has been a peak or plateau in pasture area in almost all regions, despite the earlier increases in pasture area
-```{r Abs Pasture Area Change in regions of interest}
+## Pasture Area by Geographic Group
+```{r Fig 4 - Abs Pasture Area Change in regions of interest}
 #Pasture area change, either as a line chart or two bar colums, one with average annual pasture area change from 1961-2000 and one from 2000-2016
 
 #B1 Pasture Area Change by Regions of Interest
@@ -1343,7 +1342,7 @@ baseline_year = 1961
 
 #create df with baseline pasture area
 plot_dat <- combined_country %>%
-  filter(group !="Former Soviet Union") %>% #Omitting soviet union
+  filter(year<2017) %>% 
   group_by(year, group) %>%
   summarize(tot = sum(area, na.rm = T)) 
 
@@ -1354,16 +1353,18 @@ temp <- plot_dat %>%
 plot_dat  <- left_join(filter(plot_dat, year>=baseline_year), temp) %>%
   mutate(change=tot-baseline)
 
-#%>% dplyr::group_by(group, year) %>% dplyr::summarize(area=sum(area, na.rm=T)) %>%  
 p <- plot_dat %>% ggplot() +
-    geom_line(aes(x=year, y=change/1000000, color=group,group=group, region=group)) +
-  labs(title="Fig 5: Pasture Expansion Trends Have Been Divergent Since 1961",
+    geom_line(aes(x=year, y=change*ha_to_mha, color=group,group=group, region=group)) +
+  labs(title="Pasture Expansion Trends Have Been Divergent",
        x="Year",
-       y="Mha in Pasture Area") +
+       y="Pasture Area Change Since 1961 (Mha)") +
   scale_y_continuous(labels = point) +
   scale_x_continuous(breaks = since_1961) + 
   theme(legend.title =element_blank())+
-  theme_hc()+scale_color_manual(values=c("black", "yellow", "green", "red", "orange", "blue", "purple", "orchid"))
+  theme_hc()+
+  scale_color_manual(values=c("black", "yellow", "green", "red", "orange", "blue", "purple", "orchid", "skyblue"))
+
+#rtn - change colors to theme colors
 
 p
 ggsave(filename = "outputs/change_in_area_by_region.jpg", plot = p, width = 8, height=8, units = "in")
@@ -1382,10 +1383,7 @@ p <- ggplot(regional_indices, aes(x=year, y=pct_chg_area-1, color=group)) +
 p
 ```
 
-
-
-
-
+## Graphs of prodution by level of prpoductivity
 ```{r Calculate share of global meat production occurring over time in countries with high, medium, and low productivity }
 #create column with quartile cut points for each year
 plot_dat <- combined_country %>%
