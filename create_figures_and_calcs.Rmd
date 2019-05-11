@@ -5,7 +5,7 @@ output:
   html_document:
     df_print: paged
 ---
-
+#Setup 
 ```{r global_options, echo=FALSE, message=FALSE}
 #Enter code in console to navigate to Peak Pasture Folder before starting
 #setwd("~/Google Drive File Stream/My Drive/BTI Research/Food & Farming/Peak Pasture")
@@ -14,7 +14,7 @@ output:
 library(knitr)
 opts_chunk$set(fig.width=10, fig.height=10, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE)
 
-opts_knit$set(root.dir = "../../Peak Pasture/data")
+#opts_knit$set(root.dir = "../../Peak Pasture/data")
 ```
 
 ```{r load packages}
@@ -300,9 +300,9 @@ p <- ggplot(pasture_global) +
   scale_x_continuous(breaks = since_1961) + 
   theme_hc()   #highcharts theme
 
-#p
+p
 
-ggsave(filename = "../outputs/global_pasture_area_trend.jpg", plot = p)
+ggsave(filename = "outputs/global_pasture_area_trend.jpg", plot = p)
 ```
 - The decline of `r round(pasture_global_abs_fall/1000000,1)` is equivalent to `r round(pasture_global_abs_fall / pasture_change_1961_2000$difference, 2)`% of the change in pasture from 1961 to 2000.  
 
@@ -402,10 +402,10 @@ milk_prod_change_2000 <- pct_chg(milk_prod_global_adjusted, "d_prod", 2000, 2013
 #From 1961 to 2013
 
 # Production of buffalo, cattle, goat, sheep MEAT 
-meat_prod_change_1961 <- pct_chg(meat_prod_global, "production", 1961, 2013)
+meat_prod_change_1961 <- pct_chg(meat_prod_global, "m_prod", 1961, 2013)
 
 # Production of buffalo, cattle, goat, sheep MILK
-milk_prod_change_1961 <- pct_chg(milk_prod_global, "production", 1961, 2013)
+milk_prod_change_1961 <- pct_chg(milk_prod_global, "d_prod", 1961, 2013)
 ```
 
 - Between 2000 and 2013, aggregate production of meat and milk from cattle, buffaol, goats and sheep—the most common grazing animals—rose by `r meat_prod_change_2000$percent_difference`% and by `r milk_prod_change_2000$percent_difference`%, respectively.
@@ -485,7 +485,7 @@ p <- decadal_cons_yld_changes %>%
     facet_wrap(Product~.) 
 
 #p
-ggsave(filename = "/outputs/decadal_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
+ggsave(filename = "outputs/decadal_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
 ```
 
 ```{r Fig 7 Smooth Graph of Annual Pct change in beef and cattle milk demand}
@@ -516,7 +516,7 @@ p <- pd %>%
   facet_wrap(item~.)
 p
 
-ggsave(filename = "../outputs/annual_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
+ggsave(filename = "outputs/annual_beef_milk_consumption_change.pdf", plot = p, width = 8, height=8)
 ```
 
 
@@ -821,30 +821,7 @@ p <- pasture_by_income %>%
   theme_hc()
 
 p
-
-# 
-# #create df with baseline pasture area (1961 area)
-# temp <- pasture_area_by_income %>% filter(year==1961) %>% ungroup() %>% select(inc_group_16, "baseline"=tot) 
-# 
-# #merge with pasture area by income group and subtract to get change since baseline
-# pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp) %>%
-#   mutate(change=tot-baseline)
-# 
-# #create graph
-# p <- ggplot(pasture_area_change_by_income) +
-#   geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
-#   labs(x="Year", y="Pasture Area (Mha)", 
-#        title = "Pasture Rose for Upper-Middle & Fell for High Income Countries Since 1961", 
-#        caption = "Omitting Countries Missing World Bank Income Group") +
-#   scale_x_continuous(breaks = since_1961) + 
-#   scale_y_continuous(limits = c(-250,250)) + 
-#   scale_color_hc(name ="Income Group",
-#                        breaks=c("H", "UM", "LM", "L"),
-#                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
-#   theme_hc()
-# 
-# p
-
+ggsave(filename = "outputs/pct_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
 ```
 
 
@@ -867,8 +844,7 @@ p <- income_indices %>%
   facet_wrap(variable~., scales = "free")
 
 p
-ggsave(filename = "../outputs/change_in_yield_by_income_group_v1.png", p, width = 10, height=8)
-
+ggsave(filename = "outputs/change_in_yield_by_income_group_v1.png", p, width = 10, height=8)
 ```
 
 ```{r bar graph of absolute yield change by income group}
@@ -891,7 +867,7 @@ p <- income_indices %>%
   facet_wrap(variable~., scales = "free")
 p
 
-ggsave(filename = "../outputs/change_in_yield_by_income_group_v2.png", p, width = 10, height=8)
+ggsave(filename = "outputs/change_in_yield_by_income_group_v2.png", p, width = 10, height=8)
 ```
 
 
@@ -919,7 +895,7 @@ p <-  ggplot(pd, aes(x = order, y=value-1)) + #order from least to greatest and 
   facet_wrap(.~variable, scales = "free")
 
 p
-ggsave(filename = "../outputs/change_in_yield_by_income_group_v3.png", p, width = 10, height=8)
+ggsave(filename = "outputs/change_in_yield_by_income_group_v3.png", p, width = 10, height=8)
 ```
 
 
@@ -962,7 +938,7 @@ p <- income_indices %>%
   facet_wrap(variable~., scales = "free")
 
 p
-ggsave(filename = "../outputs/change_in_production_by_income_group.png", p, width = 10, height=8)
+ggsave(filename = "outputs/change_in_production_by_income_group.png", p, width = 10, height=8)
 
 ```
 
@@ -986,7 +962,7 @@ p <- income_indices %>%
   theme_hc()
 
 p
-ggsave(filename = "../outputs/change_in_gdp_by_income_group.png", p, width = 10, height=8)
+ggsave(filename = "outputs/change_in_gdp_by_income_group.png", p, width = 10, height=8)
 ```
 
 ```{r line graph of gdp, area, population, meat, and milk production by income group}
@@ -1012,7 +988,7 @@ p <- income_indices %>%
   theme_hc()
 
 p
-ggsave(filename = "../outputs/change_in_area_prod_gdp_by_income_group.png", p, width = 10, height=8)
+ggsave(filename = "outputs/change_in_area_prod_gdp_by_income_group.png", p, width = 10, height=8)
 ```
 
 
@@ -1245,7 +1221,7 @@ p <- combined_country %>%
   theme_hc() +
   facet_wrap(variable~., scales="free")
 
-ggsave(filename = "../outputs/pasture_pressure_top_countries.png", plot = p)
+ggsave(filename = "outputs/pasture_pressure_top_countries.png", plot = p)
 ```
 
  Note: An exception to the pattern is Mongolia where pasture area declined for reasons other than productivity improvements
@@ -1265,7 +1241,7 @@ p <- fue %>% rename("Beef" = cattle_beef, "Milk" = cattle_milk) %>% gather(varia
   scale_fill_hc(name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
 p
 
-ggsave(filename = "../outputs/feed_use_efficiency_by_region.jpg", p, width=10, height=6) 
+ggsave(filename = "outputs/feed_use_efficiency_by_region.jpg", p, width=10, height=6) 
 ```
 
 
@@ -1323,7 +1299,7 @@ p <- ggplot(decadal_prod_changes, aes(x=Period, y=`Annual Percent Change`, fill=
 
 p
 
-ggsave(filename = "../outputs/decadal_change_area_production.jpg", plot = p, width=10, height=6)
+ggsave(filename = "outputs/decadal_change_area_production.jpg", plot = p, width=10, height=6)
 ```
 
 
@@ -1360,7 +1336,7 @@ p <- plot_dat %>% ggplot() +
   theme_hc()+scale_color_manual(values=c("black", "yellow", "green", "red", "orange", "blue", "purple", "orchid"))
 
 p
-ggsave(filename = "../outputs/change_in_area_by_region.jpg", plot = p, width = 8, height=8, units = "in")
+ggsave(filename = "outputs/change_in_area_by_region.jpg", plot = p, width = 8, height=8, units = "in")
 ```
 
 ```{r Percent Pasture Area Change in regions of interest}
@@ -1522,7 +1498,7 @@ p <- pasture_projections %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
  
 p
-ggsave(filename = "../outputs/projected_pasture_2010_2050.jpg", plot = p, height = 8, width = 8, units = "in")
+ggsave(filename = "outputs/projected_pasture_2010_2050.jpg", plot = p, height = 8, width = 8, units = "in")
 ```
 
 
@@ -1659,7 +1635,7 @@ p <- combined_country %>%
     theme_hc() +
     facet_wrap(variable~., scales="free")
 p
-ggsave(filename = "../outputs/change_in_pasture_production_yield_correlation.png", plot = p, width = 10, height=6)
+ggsave(filename = "outputs/change_in_pasture_production_yield_correlation.png", plot = p, width = 10, height=6)
 ```
 
 
