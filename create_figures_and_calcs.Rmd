@@ -1086,8 +1086,8 @@ mapParams <- mapCountryData(viz,
                             nameColumnToPlot="value", 
                             mapTitle="Average Annual Change in Pasture Area 2000-2016 (Million ha)", 
                             #numCats = 20, #number of bins 
-                            catMethod = seq(-3.5,3.5,.1), 
-                            colourPalette = c("#0d4459", "white","#a33332"),
+                            catMethod = c(-4,-3,-2,-1,-.5,-.0001,.0001,.5,1,2,3,4),
+                            colourPalette = c("#00a990", "white","#a33332"),
                             oceanCol = "aliceblue",
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
@@ -1110,6 +1110,15 @@ do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",
 ## visual option 4
 #catMethod = c(-4,-2,-1,-.5,-.1,-.0001,.0001,.1,.5,1,2,4),
 #colourPalette = c("#0d4459", "#00a990", "white","#d05527", "#a33332")
+
+
+#5 
+# catMethod = c(-3.5,-2.5,-1.5,-.5,-.0001,.0001,.5,1.5,2.5,3.5),
+#                             colourPalette = c("#00a990", "white","#a33332"),
+
+#6 
+# catMethod = c(-4,-3,-2,-1,-.5,-.0001,.0001,.5,1,2,3,4),
+#                             colourPalette = c("#00a990", "white","#a33332"),
 ```
 
 - `r sum(pasture_chg_annual_00_16$value>0)` Countries saw pasture area expand from 2000-2016.
