@@ -3,11 +3,7 @@
 ### Last Update: May 9, 2019, Dan Rejto
 
 ######## Setup -------------------------------------------------------------------
-
-#navigate to Peak Pasture Folder before starting as needed
-#setwd("~/Google Drive File Stream/My Drive/BTI Research/Food & Farming/Peak Pasture")
-
-##### CLEAR ENVIRONMENT BEFORE RUNNING. IF YOU DONT, YOU'LL NEED TO PLAY WITH the "Rename Variables" section on making variable names lowercase
+### CLEAR ENVIRONMENT BEFORE RUNNING. IF YOU DONT, YOU'LL NEED TO PLAY WITH the "Rename Variables" section on making variable names lowercase
 
 #load packages   
 require('tidyverse')
@@ -370,17 +366,18 @@ pasture_country[pasture_country$country=="Sudan (former)" & pasture_country$year
   pasture_country[pasture_country$country=="Sudan (former)" & pasture_country$year>=2009,]$area +
   sudan_adjustment
 
-
 #for south sudan and sudan (post split) I allocate the Sudan former adjustment in proportion to their current pasture area
+# this maintains the drop in pasture of ~6 Mha from Sudan splitting intot he 2 countries, but eliminates the 08-09 drop of ~35Mha
 s_sudan_area <- pasture_country[pasture_country$country=="South Sudan" & pasture_country$year==2016,]$area
 sudan_area <- pasture_country[pasture_country$country=="Sudan" & pasture_country$year==2016,]$area
 total_new_sudan_area <- s_sudan_area+sudan_area
+
 pasture_country[pasture_country$country=="South Sudan",]$area <- 
   pasture_country[pasture_country$country=="South Sudan",]$area + 
   (sudan_adjustment * s_sudan_area/total_new_sudan_area)
 
-pasture_country[pasture_country$country=="Sudan (former)" & pasture_country$year>=2009,]$area <- 
-  pasture_country[pasture_country$country=="Sudan (former)" & pasture_country$year>=2009,]$area + 
+pasture_country[pasture_country$country=="Sudan" & pasture_country$year>=2009,]$area <- 
+  pasture_country[pasture_country$country=="Sudan" & pasture_country$year>=2009,]$area + 
   (sudan_adjustment * sudan_area/total_new_sudan_area)
 
 
@@ -613,6 +610,10 @@ combined_country[combined_country$country=="Belgium-Luxembourg",]$inc_group_16 <
 combined_country[combined_country$country=="Serbia and Montenegro",]$inc_group_16 <- "UM"
 combined_country[combined_country$country=="Yugoslav SFR",]$inc_group_16 <- "UM"
 
+# change South Sudan income category since it is different from Sudan (former), making it seem as if there is a large
+# change in variables by income group when the country splits
+combined_country[combined_country$country=="South Sudan",]$inc_group_16 <- "LM"
+
 #add income categorizations to countries with substantial pasture area that dont have World Bank categorizations
 combined_country[combined_country$country=="Western Sahara",]$inc_group_16 <- "LM" #had 2007 GDP per capita of $2500 accordinv to the CIA
 
@@ -625,8 +626,6 @@ combined_country$inc_group_16 <- fct_relevel(combined_country$inc_group_16, "H",
 
 combined_country$inc_group_16_alt <- as_factor(combined_country$inc_group_16_alt)
 combined_country$inc_group_16_alt <- fct_relevel(combined_country$inc_group_16_alt, "H", "M", "L", "..")
-
-
 
 
 ############## Create filtered datasets for ease of use --------
