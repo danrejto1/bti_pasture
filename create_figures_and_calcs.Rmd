@@ -1384,7 +1384,7 @@ p
 ggsave(filename = "outputs/change_in_area_by_region.jpg", plot = p, width = 8, height=8, units = "in")
 ```
 
-```{r Percent Pasture Area Change in regions of interest}
+```{r Old - Percent Pasture Area Change in regions of interest}
 p <- ggplot(regional_indices, aes(x=year, y=pct_chg_area-1, color=group)) +
   geom_line()+
   labs(title="Fig: Pasture Area Is Declining or Flat in Nearly All Regions",
@@ -1397,7 +1397,7 @@ p <- ggplot(regional_indices, aes(x=year, y=pct_chg_area-1, color=group)) +
 p
 ```
 
-## Graphs of prodution by level of prpoductivity
+## Old - Graphs of prodution by level of prpoductivity
 ```{r Calculate share of global meat production occurring over time in countries with high, medium, and low productivity }
 #create column with quartile cut points for each year
 plot_dat <- combined_country %>%
@@ -1449,78 +1449,36 @@ p
 
 ## Yield growth in high income countries may be slowing
 
-```{r Yield Growth in High income countries by decade}
-base_year = 1961
-temp <-   combined_country %>%
-  filter(year>= base_year, year<=2013) %>%
-  filter(inc_group_16=="H")%>% #filter to high income
-  group_by(year) %>%
-  summarize(m_cons_total= sum(m_cons_total, na.rm=T),
-            d_cons_total= sum(d_cons_total, na.rm=T),
-            m_yld= sum(m_prod, na.rm=T)/sum(m_head, na.rm=T), #tons production/animal
-            d_yld= sum(d_prod, na.rm=T)/sum(d_head, na.rm=T), #tons production/animal
-            m_tot_productivity = sum(m_prod, na.rm=T)/sum(area, na.rm=T), #total beef productivity of land ( tons beef/hectare total pasture)
-            d_tot_productivity = sum(d_prod, na.rm=T)/sum(area, na.rm=T)) #total milk productivity of land ( tons milk/hectare total pasture)
-  
-decadal_cons_yld_changes_highinc <- tibble(
-  "Period" = rep(c("1961-1970","1971-1980", "1981-1990","1991-2000","2001-2010", "2011-2013"),6),
-  "Product" = c(rep("Beef", 18), rep("Dairy", 18)),
-  "Variable" = c(rep("Production", 6), rep("Yield", 6), rep("Total Productivity", 6), rep("Production", 6), rep("Yield", 6) ,rep("Total Productivity", 6)),
-  "Annual Percent Change" = c( 
-    pct_chg(temp, "m_cons_total", 1961, 1970)[1,7], 
-  pct_chg(temp, "m_cons_total", 1971, 1980)[1,7],
-  pct_chg(temp, "m_cons_total", 1981, 1990)[1,7],
-  pct_chg(temp, "m_cons_total", 1991, 2000)[1,7],
-  pct_chg(temp, "m_cons_total", 2001, 2010)[1,7],
-  pct_chg(temp, "m_cons_total", 2011, 2013)[1,7],
-  
-  pct_chg(temp, "m_yld", 1961, 1970)[1,7], 
-  pct_chg(temp, "m_yld", 1971, 1980)[1,7],
-  pct_chg(temp, "m_yld", 1981, 1990)[1,7],
-  pct_chg(temp, "m_yld", 1991, 2000)[1,7],
-  pct_chg(temp, "m_yld", 2001, 2010)[1,7],
-  pct_chg(temp, "m_yld", 2011, 2013)[1,7],
-  
-  pct_chg(temp, "m_tot_productivity", 1961, 1970)[1,7], 
-  pct_chg(temp, "m_tot_productivity", 1971, 1980)[1,7],
-  pct_chg(temp, "m_tot_productivity", 1981, 1990)[1,7],
-  pct_chg(temp, "m_tot_productivity", 1991, 2000)[1,7],
-  pct_chg(temp, "m_tot_productivity", 2001, 2010)[1,7],
-  pct_chg(temp, "m_tot_productivity", 2011, 2013)[1,7],
-  
-  pct_chg(temp, "d_cons_total", 1961, 1970)[1,7], 
-  pct_chg(temp, "d_cons_total", 1971, 1980)[1,7],
-  pct_chg(temp, "d_cons_total", 1981, 1990)[1,7],
-  pct_chg(temp, "d_cons_total", 1991, 2000)[1,7],
-  pct_chg(temp, "d_cons_total", 2001, 2010)[1,7],
-  pct_chg(temp, "d_cons_total", 2011, 2013)[1,7],
-  
-  pct_chg(temp, "d_yld", 1961, 1970)[1,7], 
-  pct_chg(temp, "d_yld", 1971, 1980)[1,7],
-  pct_chg(temp, "d_yld", 1981, 1990)[1,7],
-  pct_chg(temp, "d_yld", 1991, 2000)[1,7],
-  pct_chg(temp, "d_yld", 2001, 2010)[1,7],
-  pct_chg(temp, "d_yld", 2011, 2013)[1,7],
-  
-  pct_chg(temp, "d_tot_productivity", 1961, 1970)[1,7], 
-  pct_chg(temp, "d_tot_productivity", 1971, 1980)[1,7],
-  pct_chg(temp, "d_tot_productivity", 1981, 1990)[1,7],
-  pct_chg(temp, "d_tot_productivity", 1991, 2000)[1,7],
-  pct_chg(temp, "d_tot_productivity", 2001, 2010)[1,7],
-  pct_chg(temp, "d_tot_productivity", 2011, 2013)[1,7])
-  )
+```{r Calculate Yield Growth in High income countries by decade}
+pd <-   combined_country %>%
+  filter(year<=2013) %>% #series only goes up to 2013
+  group_by(year, inc_group_16) %>%
+  summarize(Beef = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T), #tons production/animal
+            Milk = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T)) %>%  #tons production/animal
+  gather(item, yield, Beef, Milk) %>% 
+  group_by(item, inc_group_16) %>% 
+  mutate(pct_chg = (yield/dplyr::lag(yield))) #annual pct change by item
 ```
 
-```{r Graph Decadal Global Consumption, Yield, and Total Productivity Changes}
-p <- decadal_cons_yld_changes_highinc %>% filter(!Variable %in% c("Production")) %>% ggplot(aes(x=Period, y=as.numeric(`Annual Percent Change`))) +
-    geom_col(aes(fill=Variable,group=Variable), position = "dodge")+
-  labs(title = "Fig 2a) Productivity Slowing in High Income Countries",
-       y = paste0("Annual Percent Change"),
-       x = "Period")+
+```{r Fig A6 - Graph Yield Slowdown in High Income Countries}
+p <- pd %>% 
+  filter(inc_group_16 %in% c("H", "UM")) %>%  #specify income groups
+  ggplot(aes(x=year, y=pct_chg-1, color=inc_group_16))+  #color different items
+  geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
+  geom_point(alpha=.2) + 
+  labs(title = "Yield Growth May Be Slowing",
+       y = ("Annual Percent Change"),
+       x = "Year") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
+  scale_x_continuous(breaks = since_1961) +
     theme_hc()+
-  facet_wrap(Product~.)
+  #theme(legend.position = "none")+
+  facet_wrap(item~.)+
+  scale_color_hc(name ="Income Group",
+                       breaks=c("H", "UM", "LM", "L"),
+                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
 
-p
+ggsave(plot=p, filename = "outputs/yield_growth_slowdown.pdf", width = 8, height = 8)
 ```
 
 
