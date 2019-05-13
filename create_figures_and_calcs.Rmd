@@ -1041,7 +1041,7 @@ do.call(addMapLegend, c(mapParams, legendLabels="all", legendWidth=0.5))
 ```
 
 
-```{r Map of pasture area change 1961-1999}
+```{r Old - Map of pasture area change 1961-1999}
 pasture_chg_annual_61_99 <- combined_country %>%
   filter(year %in% c(1999)) %>%
   select(country, year, abs_chg_area, iso_code) %>%
@@ -1069,6 +1069,10 @@ do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals="page", l
 ```
 
 ```{r Fig 2 - Map of avg. annual pasture area change 2000-2016}
+#export map
+pdf("outputs/map_pasture_change_00-16.pdf",width=8,height=8)
+
+#filter and prep data for mapping
 pasture_chg_annual_00_16 <- combined_country %>%
   filter(year %in% c(2000, 2016)) %>%
   select(country, year, abs_chg_area, iso_code) %>% 
@@ -1087,7 +1091,7 @@ mapParams <- mapCountryData(viz,
                             nameColumnToPlot="value", 
                             mapTitle="Average Annual Change in Pasture Area 2000-2016 (Million ha)", 
                             #numCats = 20, #number of bins 
-                            catMethod = c(-4,-3,-2,-1,-.5,-.0001,.0001,.5,1,2,3,4),
+                            catMethod = seq(-3.2,3.2,.1), 
                             colourPalette = c("#00a990", "white","#a33332"),
                             oceanCol = "aliceblue",
                             addLegend = FALSE, 
@@ -1095,6 +1099,7 @@ mapParams <- mapCountryData(viz,
 #create map
 do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",legendWidth=0.5))
 
+dev.off()
 
 ## visual option 1
 #catMethod = seq(-3.5,3.5,.1), 
@@ -1129,7 +1134,7 @@ do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",
 - The countries with the most rapidly growing pasture area since 2000 are `r head(arrange(pasture_chg_annual_00_16, desc(value))$country, 3)`.
 
 
-
+## Old - Top Country Analysis
 ```{r Table of Top Pasture Area Change Countries}
 top_pasture_contraction <- combined_country %>%
   filter(year==2016) %>%
@@ -1146,7 +1151,6 @@ top_pasture_expansion <- combined_country %>%
 top_pasture_expansion
 ```
 
-
 ```{r Percent of Pasture Change due to Individual Countries}
 combined_country %>%
   filter(year==2016)%>%
@@ -1158,7 +1162,6 @@ combined_country %>%
   kable(caption = "China Pasture Change 72% of Upper-Middle Income Group Change (1961-2016)",col.names = c("Country", "Income Group", "Country Pasture Change", "Income Group Pasture Change", "Country % of Income Group"), digits = 2)
 
 ```
-
 
 ```{r Dumbell plot of change in yields and production for top countries}
 #####
@@ -1256,7 +1259,9 @@ ggsave(filename = "outputs/pasture_pressure_top_countries.png", plot = p)
  Note: An exception to the pattern is Mongolia where pasture area declined for reasons other than productivity improvements
 
 - The regions where pasture contracted also had higher levels of other types of productivity than regions where pasture expanded
-```{r Fig 9 Graph of Feed Use Efficiency (beef/kg dry matter) for countries with top pasture area change or grouped by whether pasture expanded or contracted}
+
+## Productivity Figures
+```{r Fig 9 Graph of Feed Use Efficiency (beef/kg dry matter) for regions grouped by whether pasture expanded or contracted}
 
 p <- fue %>% rename("Beef" = cattle_beef, "Milk" = cattle_milk) %>% gather(variable, value, Beef, Milk) %>%
   ggplot(aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
@@ -1273,7 +1278,7 @@ p
 ggsave(filename = "outputs/feed_use_efficiency_by_region.jpg", p, width=10, height=6) 
 ```
 
-
+## Old - Analysis of production in country where pasture grew
 - Despite historic growth in production and pasture area in countries like Brazil and China, recent slowdowns in production accompanied by continued productivity growth has enabled a plateauing of pasture area
 ```{r Calculate Decadal Production & Area Changes for Countries Where Pasture Grew}
 base_year = 1961
