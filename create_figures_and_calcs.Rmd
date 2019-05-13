@@ -1263,19 +1263,28 @@ ggsave(filename = "outputs/pasture_pressure_top_countries.png", plot = p)
 ## Productivity Figures
 ```{r Fig 9 Graph of Feed Use Efficiency (beef/kg dry matter) for regions grouped by whether pasture expanded or contracted}
 
-p <- fue %>% rename("Beef" = cattle_beef, "Milk" = cattle_milk) %>% gather(variable, value, Beef, Milk) %>%
-  ggplot(aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
+#prep data. create seperate df with world average value. relabel vars
+regions <- unique(fue$region)
+pd <- fue  %>% rename("Beef" = cattle_beef, "Milk" = cattle_milk) %>% gather(variable, value, Beef, Milk)
+world_avg <- pd %>% filter(region==regions[1])
+pd <-  pd %>% filter(region!=regions[1])
+
+#plot regions as bars and world average as horizontal line
+p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
   geom_col()+
-  labs(title = "Feed Use Efficiency Lower in Regions where Pasture Expanded", 
+  labs(title = "Feed Efficiency Lower in Regions where Pasture Expanded", 
        x="", 
        y = "kg beef/kg dry matter consumption")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
   theme_hc()+
   facet_wrap(variable~., scales = "free")+
   scale_fill_hc(name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
-p
 
-ggsave(filename = "outputs/feed_use_efficiency_by_region.jpg", p, width=10, height=6) 
+p <- p + 
+  geom_hline(aes(yintercept=1/value), world_avg, linetype="dashed") +
+  geom_text(aes(x=1.5, y= (1/value)*1.1, label="World Average"), world_avg, size=4)
+
+ggsave(filename = "outputs/feed_efficiency_by_region.pdf", p, width=12, height=8) 
 ```
 
 ## Old - Analysis of production in country where pasture grew
