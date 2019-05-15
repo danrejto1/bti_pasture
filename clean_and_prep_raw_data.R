@@ -65,7 +65,7 @@ income_country <- income_country[c(7:nrow(income_country)),] #remove extra rows
 income_country <- select(income_country, "country" = `Bank's fiscal year:`,"inc_group_16"=FY16, "iso_code" = X__1) #select columns
 
 
-# World Bank Country GDP Data
+## World Bank Country GDP Data
 #accessed 1-18-19 from https://databank.worldbank.org/data/pasture-variables/id/5535337d
 # if link above doenst work or load variables listed below, follow these instructions
 # Under Country panel, deselect anything already selected, click "Countries" (Not All or Aggregates), and Select All
@@ -75,6 +75,21 @@ income_country <- select(income_country, "country" = `Bank's fiscal year:`,"inc_
 #after downloading, extract zip file and use larger file, with "Data" in the filename
 gdp_pop_country <- read_csv("data/raw_data/world_bank_gdp_pop_country.csv", na = "..")
 gdp_pop_country <- filter(gdp_pop_country, is.na(`Country Name`)==F, `Country Name`!="") #remove extra blank rows for metadata
+
+
+## FAO consumption forecasts for 2050
+# Accessed 05-14-19 from from FAO’s “Food and agriculture projections to 2050” website http://www.fao.org/global-perspectives-studies/food-agriculture-projections-to-2050/en/
+# Downloaded “Country data for all indicators” zip file  http://www.fao.org/fileadmin/user_upload/global-perspective/csv/FOFA2050CountryData_all.zip
+# Citation: FAO. 2018. The future of food and agriculture – Alternative pathways to 2050. Rome.
+fao_forecast <- read_csv("data/raw_data/fao_all_2050_forecasts_by_country.csv") %>% 
+  filter(Scenario == "Business As Usual",   #just look at BAU forecast
+         Indicator == "Commodity balances, volume",
+         Item %in% c("Beef and veal", "Raw milk"),
+         Element == "Food use") %>% 
+  select(-Element, -Indicator, -Domain, -Scenario) %>% 
+  rename(country = CountryName, "iso_code" = CountryCode, "tot_cons" = Value)
+# note: this dataset incldues only 145 countries/entities while the historical FAO ones include 239 countries. Some of the entities int his dataset are not individual countries, but instead are groups like "Rest of SSA" or "Rest of SAS"
+
 
 
 ## Climate categorizations (and income grouping over time)
@@ -556,7 +571,7 @@ combined_country <-
 gdp_pop_country <- left_join(gdp_pop_country, select(income_country, country, "iso_code"))
 
 combined_country <- left_join(combined_country, 
-                               select(filter(gdp_pop_country, is.na(gdp)==F, is.na(iso_code)==F), -country),
+                               select(filter(gdp_pop_country, is.na(iso_code)==F), -country),
                                       by=c("iso_code", "year"))
 
 land_area_country <- left_join(land_area_country, major_crosswalk)
@@ -575,6 +590,7 @@ pasture_country <- left_join(pasture_country, major_crosswalk)
 
 cattle_stocks_country <- left_join(cattle_stocks_country, minor_crosswalk)
 cattle_stocks_country <- left_join(cattle_stocks_country, major_crosswalk)
+
 
 ############## Recode   ##############
 ### Recode country names for to make names consistent over time, despite historical country name changes
@@ -628,6 +644,12 @@ combined_country$inc_group_16_alt <- as_factor(combined_country$inc_group_16_alt
 combined_country$inc_group_16_alt <- fct_relevel(combined_country$inc_group_16_alt, "H", "M", "L", "..")
 
 
+#add income groups and major and minor region to fao_forecast
+fao_forecast <- left_join(fao_forecast, 
+                          select(filter(combined_country, is.na(iso_code)==F, year==2016), iso_code, inc_group_16_alt, inc_group_16, minor_group, major_group, income4classes, income3classes),
+                          by=c("iso_code"))
+
+
 ############## Create filtered datasets for ease of use --------
 
 #global totals for animal production, based on adjusted country data from above. this is for all herding animals included
@@ -652,3 +674,4 @@ write_csv(x = major_crosswalk, path = "data/clean_data/major_crosswalk.csv")
 write_csv(x = minor_crosswalk, path = "data/clean_data/minor_crosswalk.csv")
 write_csv(x = hyde, path = "data/clean_data/hyde.csv")
 write_csv(x = land_area_country, path = "data/clean_data/land_area.csv")
+write_csv(x = fao_forecast, path = "data/clean_data/fao_beef_milk_consumption_forecast.csv")
