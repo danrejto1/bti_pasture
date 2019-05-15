@@ -559,9 +559,9 @@ combined_country <-
             select(filter(meat_prod_country, item=="cattle"), -item)) %>% #beef production vars
   full_join(select(filter(milk_prod_country, item=="cattle"),  -item)) %>% #dairy production vars
   full_join(select(filter(cons_country, item=="Bovine Meat"),  -item)) %>% #beef consumption vars
-  rename("m_protein_pc"=protein_pc, "m_cons_total"=cons_total, "m_cons_pc_kg"=cons_pc_kg, "m_cons_pc_cal"=cons_pc_cal) %>%  #rename beef cons variables
+    rename("m_protein_pc"=protein_pc, "m_cons_total"=cons_total, "m_cons_pc_kg"=cons_pc_kg, "m_cons_pc_cal"=cons_pc_cal) %>%  #rename beef cons variables
   full_join(select(filter(cons_country, item=="Milk - Excluding Butter"),  -item)) %>% #merge with dairy consumption vars
-  rename("d_protein_pc"=protein_pc, "d_cons_total"=cons_total, "d_cons_pc_kg"=cons_pc_kg, "d_cons_pc_cal"=cons_pc_cal) %>%  #rename dairy cons variables
+    rename("d_protein_pc"=protein_pc, "d_cons_total"=cons_total, "d_cons_pc_kg"=cons_pc_kg, "d_cons_pc_cal"=cons_pc_cal) %>%  #rename dairy cons variables
   full_join(select(filter(cattle_stocks_country, item=="cattle"), -item)) %>% #merge with cattle stocks
   full_join(minor_crosswalk) %>% #merge with minor groups
   full_join(major_crosswalk) %>% #merge with major groups

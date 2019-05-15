@@ -275,8 +275,38 @@ combined_country[combined_country$country =="Australia",]$group <- "Australia"
 biggest_pasture_countries <- c("United States of America", "Brazil", "China", "Australia", "Kazakhstan", "Saudi Arabia", "Mongolia", "Argentina", "Russia", "South Africa") #
 ```
 
-#Calculations
-## Global Pasture Area Has Peaked
+# Chapter 1 Calculations
+
+```{r Forecast change in Beef consumption 2012 to 2050}
+beef_cons_12_50 <- fao_forecast %>% 
+  filter(item == "Beef and veal") %>%
+  group_by(year) %>% 
+  summarize(tot = sum(tot_cons, na.rm = F)) %>% 
+  spread(key = year, value = tot) %>% 
+  mutate(pct_chg_12_50 = (`2050`-`2012`)/`2012`*100) %>%  
+  pull(-1)  #convert last variable to vector
+
+#round(beef_cons_12_50,2)
+
+#percent in high-income countries vs. everywhere else
+percent_beef_chg_12_50_by_income <- fao_forecast 
+
+percent_beef_chg_12_50_by_income$region <- fct_other(percent_beef_chg_12_50_by_income$region, 
+                                                     keep = "High-income", other_level = 'Developing')  #recode region to 2 groups
+
+percent_beef_chg_12_50_by_income <- percent_beef_chg_12_50_by_income %>% 
+  filter(item == "Beef and veal") %>%
+  group_by(year, region) %>% 
+  summarize(tot = sum(tot_cons, na.rm = F)) %>% 
+  spread(key = year, value = tot) %>% 
+  mutate(pct_chg_12_50 = (`2050`-`2012`)/`2012`*100)
+
+```
+Demand for beef alone is forecast to rise `r round(beef_cons_12_50,2)`% by 2050, with the greatest growth in developing countries. Growth in high-income countries is `r filter(percent_beef_chg_12_50_by_income, region == "High-income")$pct_chg_12_50`% and in all other countries (which we categorize as developing ones) is `r filter(percent_beef_chg_12_50_by_income, region == "Developing")$pct_chg_12_50`
+
+# Chapter 2 Calculations
+
+## Fig 1 & Global Pasture Area Has Peaked
 
 ```{r Fig 1 Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
@@ -404,7 +434,7 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 
 
 
-## Productivity Gains Key to Peak Pasture
+## Fig 6 and 7 and A5 - Productivity Gains Key to Peak Pasture
 ```{r Pct change values in production and consumption }
 top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
@@ -661,6 +691,7 @@ p <- regional_indices %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 p
+ggsave(filename = "outputs/")
 #########
 # - Line Graph-  Very Messy way to display data since there's a lot of noise. Better to do column or other graph that aggregates data cross years
 # base_year = 1961
@@ -731,7 +762,7 @@ min_pct_extra_land <- min_extra_land/total_pasture_2013
  
 
 # Figures
-## analyses by income group
+## Fig 3 & 8 - Analyses by income group
 ```{r Calculate Absolute and percent changes by income group}
 #create dataframe of absolute & perent change in yields, consumption, production and area by income group
 baseline_year = 1961
@@ -1008,7 +1039,7 @@ ggsave(filename = "outputs/change_in_area_prod_gdp_by_income_group.png", p, widt
 
 
 - Pasture declined most in Australia, Mongolia, U.S., and Argentina, and increased most in China, Brazil, Saudi Arabia, and Niger.
-## Maps
+## Fig 2 and A3 and Maps
 ```{r Fig A3 - Map of pasture area change by country since 1961 (in Mha)}
 viz <- combined_country %>%
   filter(year %in% c(2016)) %>%
@@ -1270,7 +1301,7 @@ ggsave(filename = "outputs/pasture_pressure_top_countries.png", plot = p)
 
 - The regions where pasture contracted also had higher levels of other types of productivity than regions where pasture expanded
 
-## Productivity Figures
+## Fig 9 and Productivity Figures
 ```{r Fig 9 Graph of Feed Use Efficiency (beef/kg dry matter) for regions grouped by whether pasture expanded or contracted}
 #prep data. create seperate df with world average value. relabel vars
 regions <- unique(fue$region)
@@ -1355,7 +1386,7 @@ ggsave(filename = "outputs/decadal_change_area_production.jpg", plot = p, width=
 ```
 
 
-## Pasture Area by Geographic Group
+## Fig 4 and Pasture Area by Geographic Group
 ```{r Fig 4 - Abs Pasture Area Change in regions of interest}
 #Pasture area change, either as a line chart or two bar colums, one with average annual pasture area change from 1961-2000 and one from 2000-2016
 
@@ -1452,39 +1483,9 @@ p
 ```
 - The above graph plots the portion of global beef production each year that occured in countries with beef yields in different quantiles (low, medium and high) for that year. You can see that there has been a slight shift in production. In 1961, <13% of global production came from coutnries with the lowest yields. In the 2010s, >18% came from these countries. Production shifted primarily away from countries with high yields - the highest yielding countries went from providing >75% of production to supplying about 70%. The portion from countries with yields in the middle hasn't shifted as substantially.
 
-## Yield growth in high income countries may be slowing
-```{r Calculate Yield Growth in High income countries by decade}
-pd <-   combined_country %>%
-  filter(year<=2013) %>% #series only goes up to 2013
-  group_by(year, inc_group_16) %>%
-  summarize(Beef = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T), #tons production/animal
-            Milk = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T)) %>%  #tons production/animal
-  gather(item, yield, Beef, Milk) %>% 
-  group_by(item, inc_group_16) %>% 
-  mutate(pct_chg = (yield/dplyr::lag(yield))) #annual pct change by item
-```
-```{r Fig A6 - Graph Yield Slowdown in High Income Countries}
-p <- pd %>% 
-  filter(inc_group_16 %in% c("H", "UM")) %>%  #specify income groups
-  ggplot(aes(x=year, y=pct_chg-1, color=inc_group_16))+  #color different items
-  geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
-  geom_point(alpha=.2) + 
-  labs(title = "Yield Growth May Be Slowing",
-       y = ("Annual Percent Change"),
-       x = "Year") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
-  scale_x_continuous(breaks = since_1961) +
-    theme_hc()+
-  #theme(legend.position = "none")+
-  facet_wrap(item~.)+
-  scale_color_hc(name ="Income Group",
-                       breaks=c("H", "UM", "LM", "L"),
-                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
 
-ggsave(plot=p, filename = "outputs/yield_growth_slowdown.pdf", width = 8, height = 8)
-```
 
-## Projections of future pasture and consumption
+## Figs 10 and 12 and Projections of future pasture and consumption
 ```{r Fig 10 FAO Forecast of future meat and milk consumption by geographic group}
 pd <- fao_forecast #new dataset for plotting
 
@@ -1535,7 +1536,7 @@ p
 ggsave(filename = "outputs/projected_pasture_2010_2050.jpg", plot = p, height = 8, width = 8, units = "in")
 ```
 
-## Analyses by Climate Zone
+## Fig 5 and Analyses by Climate Zone
 ```{r Fig 5 Change in Global pasture area by Humid, Temperature and Arid climates}
 # absolute change in pasture area since 1961 by climate category
 p <- combined_country %>%
@@ -1611,6 +1612,32 @@ ggsave(filename = "outputs/pasture_change_by_climate.pdf", plot = p, width = wdt
 # theme(legend.title = element_blank())
 ```
 
+## Fig 11 - Global Trade in Beef
+```{r Fig 11 line graph of ratio of domestic production to domestic consumption of beef by region}
+# download "Production Quantity" and "Domestic supply quantity" from FAO "Food balance sheets" for "Bovine meat" for all years for major world regions (Africa, Americas, Asia, Europe, Oceania). Only "units" selected as an output formatting option. Accessed 5/15/19
+
+pd <- read_csv("data/raw_data/fao_regional_beef_supply_and_prod.csv")
+
+#reshape to calculate ratio of produciton to domestic supply (aka consumption)
+pd <- pd %>% 
+  spread(key = Element, value = Value) %>% 
+  mutate(ratio = `Production`/`Domestic supply quantity`)
+
+p <- pd %>% filter(Country != "Oceania") %>% #plot w/o Oceania
+  ggplot(aes(x=Year, y=ratio, color=Country)) + 
+  geom_line()+
+  scale_y_continuous(limits = c(0,2))+
+  scale_x_continuous(breaks = since_1961_2013)+
+  labs(x="", y="Ratio of Domestic Bovine Meat\n Production to Supply", caption = "Omitting Oceania, which produces over 2x domestic supply")+
+  theme(legend.title = element_blank())+
+  theme_hc()
+
+p
+
+ggsave(filename = "outputs/fig_11_domestic_production_to_supply.pdf", plot = p, width=wdt, height=hgt)
+```
+
+
 # Report Appendices
 - Add scatter plot of pasture change for all countries, perhaps vs. log(GDP)
 ```{r Plot of pasture change for all countries}
@@ -1622,6 +1649,37 @@ ggsave(filename = "outputs/pasture_change_by_climate.pdf", plot = p, width = wdt
 
 ```
 
+## A5 Yield growth in high income countries may be slowing
+```{r Calculate Yield Growth in High income countries by decade}
+pd <-   combined_country %>%
+  filter(year<=2013) %>% #series only goes up to 2013
+  group_by(year, inc_group_16) %>%
+  summarize(Beef = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T), #tons production/animal
+            Milk = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T)) %>%  #tons production/animal
+  gather(item, yield, Beef, Milk) %>% 
+  group_by(item, inc_group_16) %>% 
+  mutate(pct_chg = (yield/dplyr::lag(yield))) #annual pct change by item
+```
+```{r Fig A5 - Graph Yield Slowdown in High Income Countries}
+p <- pd %>% 
+  filter(inc_group_16 %in% c("H", "UM")) %>%  #specify income groups
+  ggplot(aes(x=year, y=pct_chg-1, color=inc_group_16))+  #color different items
+  geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
+  geom_point(alpha=.2) + 
+  labs(title = "Yield Growth May Be Slowing",
+       y = ("Annual Percent Change"),
+       x = "Year") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
+  scale_x_continuous(breaks = since_1961) +
+    theme_hc()+
+  #theme(legend.position = "none")+
+  facet_wrap(item~.)+
+  scale_color_hc(name ="Income Group",
+                       breaks=c("H", "UM", "LM", "L"),
+                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
+
+ggsave(plot=p, filename = "outputs/yield_growth_slowdown.pdf", width = 8, height = 8)
+```
 
 
 
