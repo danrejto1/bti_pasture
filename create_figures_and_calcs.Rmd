@@ -4,6 +4,7 @@ author: "Dan Rejto"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 #Setup 
 ```{r global_options, echo=FALSE, message=FALSE}
@@ -18,13 +19,25 @@ opts_chunk$set(fig.width=10, fig.height=10, echo=FALSE, warning=FALSE, message=F
 ```
 
 ```{r load packages}
-require('tidyverse')
-require('ggthemes')
-require('scales')
-require('plotly')
-require('rworldmap')
-require('rlang')
-require('broom')
+library(tidyverse)
+library(ggthemes)
+library(scales)
+library(plotly)
+library(rworldmap)
+library(rlang)
+library(broom)
+
+#for using downloaded Futura font 
+library(showtext)
+font_add(family="Futura", regular = "~/Library/Fonts/Futura Medium.ttf")
+showtext_auto()
+
+#old code for fonts
+#library(extrafont)
+#library(Rttf2pt1)
+#just run this once
+#loadfonts() #requires having Ghostfont installed on comptuer
+#
 ```
 
 ```{r Load datasets, message=FALSE}
@@ -43,28 +56,32 @@ fao_forecast <- read_csv(file = "data/clean_data/fao_beef_milk_consumption_forec
 ```
 
 ```{r Set themes}
-#rtn
+#BTI visual theme
+font_family <-"Futura"   #"Helvetica"  #
 
-#set rules for formatting graphs
+bti_theme <- theme_bw(base_family = font_family, base_size = 12) + 
+  theme(plot.title = element_text(color = "#0d4459",  size = 14),
+        axis.title.x = element_text(size = 12),
+       axis.title.y = element_text(size = 12),
+        axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        panel.grid.major.y = element_line(colour = "#D8D8D8"), panel.grid.minor.y = element_blank(), 
+        panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
+        panel.border = element_blank(), panel.background = element_blank(),  #element_rect(color = "black", size = 1)  #used for border around plot
+        legend.position = "bottom", legend.key = element_rect(fill = "#FFFFFF00"),
+        complete = FALSE
+        )
+
+#color template
+cols <- c("#0d4459", "#00a990", "#d05527", "#a33332", "#b2b2b1", "#dfb9a6")
+
+#shortcut for adding commas to numbers in graphs, and labels
 point <- format_format(big.mark = ",", decimal.mark = ".", scientific = FALSE)
-
-# bti_theme <- theme_classic() +
-#                         theme(base_size = 20)
-# #theme(text = element_text(family = base_family, face = "plain", colour = "black", 
-#                                             size = base_size, hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9)),
-#                         legend.position = c(0.2, 0.8),
-#                         legend.title = element_blank(),
-#                         legend.text = element_text(size = rel(0.8)), 
-#                         plot.title = element_text(size = rel(1.2)),
-#                         axis.text = element_text(size = rel(0.8), colour = "grey50"),
-#                         axis.title.x = element_text(), 
-#                         axis.title.y = element_text(angle = 90)
-#                         ))
-theme_set(theme_gray())
 
 income_labeller <- list("H" = "High", "UM" = "Upper Middle", "LM" = "Lower Middle", "L" = "Low")
 climate_labeller <- list("H" = "Humid", "A" = "Arid", "T" = "Temperate")
 
+# vars for plot sizes
 wdt <- 8 #default figure output width
 hgt <- 8 #default figure output height
 big_wdt <- 16 #width for figures with 2 facets side by side
@@ -273,7 +290,6 @@ Demand for beef alone is forecast to rise `r round(beef_cons_12_50,2)`% by 2050,
 # Chapter 2 Calculations
 
 ## Fig 1 & Global Pasture Area Has Peaked
-
 ```{r Fig 1 Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
   filter(is.na(area)==F) %>% 
@@ -304,12 +320,13 @@ pasture_change_1961_2016 <- pct_chg(pasture_global, "area", 1961, 2016)
 pasture_change_1961_2000 <- pct_chg(pasture_global, "area", 1961, 2000)
 
 p <- ggplot(pasture_global) +
-  geom_line(aes(x = year, y = area/1000000000)) +  #convert to billion ha 
-  labs(title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall_2000_16,1), "% (", round(pasture_global_abs_fall_2000_16/1000000,1), " Mha) since 2000"),  
+  geom_line(aes(x = year, y = area/1000000000), color = "#0D4459") +  #convert to billion ha 
+  labs(
+    #title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall_2000_16,1), "% (", round(pasture_global_abs_fall_2000_16/1000000,1), " Mha) since 2000"),  
        y = "Global Pasture Area (billion ha)", 
        x = "") +
   scale_x_continuous(breaks = since_1961) + 
-  theme_hc()   #highcharts theme
+  bti_theme
 
 p
 
@@ -497,21 +514,25 @@ pd2 <- milk_cons_global %>%
 
 pd <- bind_rows(pd1, pd2)
 
+pd$item <- recode(pd$item, "Bovine Meat"="Beef", "Milk - Excluding Butter"="Milk")  
+
 p <- pd %>% 
-  filter(item %in% c("Bovine Meat", "Milk - Excluding Butter")) %>%  #just graph for beef &milk
+  filter(item %in% c("Beef", "Milk")) %>%  #just graph for beef &milk
   ggplot(aes(x=year, y=pct_chg/100, color=item))+
   geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
   geom_point(alpha=.2) + 
   labs(y = paste0("Annual Percent Change"),
-       x = "") +
+       x = "",
+       caption = "Categories represent FAO 'Bovine Meat' and 'Milk - Excluding Butter' items.") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(breaks = since_1961) +
-    theme_hc()+
+  facet_wrap(item~.)+
+  bti_theme + 
   theme(legend.position = "none")+
-  facet_wrap(item~.)
+  scale_color_manual(values = cols)
 p
 
-ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
+ggsave(filename = "outputs/tfig_7_annual_beef_milk_consumption_change.pdf", plot = p)
 ```
 
 ```{r Calculate pct change in global cattle meat and milk yields, production and consumption}
@@ -560,7 +581,7 @@ p <- global_indices %>%
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
   theme_hc()
-p
+#p
 ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p, width = wdt, height=hgt)
 ```
 
@@ -593,7 +614,7 @@ brazil_beef_yld_pct_lower_aus <- round(1- (filter(regional_indices, year==2013, 
 china_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group=="China")$m_yld / australia_beef_yld), 2)*100
 ```
 
-- For instance, beef yields in Africa, Brazil, and China are all substantially lower than in higher-income Australia— `r africa_beef_yld_pct_lower_aus)`%, `r brazil_beef_yld_pct_lower_aus`% and `r china_beef_yld_pct_lower_aus` % less, respectively.
+- For instance, beef yields in Africa, Brazil, and China are all substantially lower than in higher-income Australia— `r africa_beef_yld_pct_lower_aus`%, `r brazil_beef_yld_pct_lower_aus`% and `r china_yld_pct_lower_aus` % less, respectively.
 
 
 ```{r Fig A4 - Graph change in  meat & milk yields and stocking by group}
@@ -616,7 +637,7 @@ p <- regional_indices %>%
     theme_hc()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-p
+#p
 ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p, width=wdt, height=hgt)
 ```
 
@@ -728,7 +749,7 @@ p <- ggplot(pasture_area_change_by_income) +
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
   theme_hc()
 
-p
+#p
 ggsave(filename = "outputs/alt_fig_3_abs_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
 ```
 
@@ -758,7 +779,7 @@ p <- pasture_by_income %>%
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
   theme_hc()
 
-p
+#p
 ggsave(filename = "outputs/fig_3pct_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
 ```
 
@@ -780,7 +801,7 @@ p <- income_indices %>%
   theme_hc() +
   facet_wrap(variable~., scales = "free")
 
-p
+#p
 ggsave(filename = "outputs/fig_8_change_in_yield_by_income_group_v1.png", p)
 ```
 
@@ -824,7 +845,7 @@ mapParams <- mapCountryData(viz,
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
 #create map
-do.call(addMapLegend, c(mapParams, legendLabels="all", legendWidth=0.5))
+#do.call(addMapLegend, c(mapParams, legendLabels="all", legendWidth=0.5))
 ```
 
 ```{r Fig 2 - Map of avg. annual pasture area change 2000-2016}
@@ -856,7 +877,7 @@ mapParams <- mapCountryData(viz,
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
 #create map
-do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",legendWidth=0.5))
+#do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",legendWidth=0.5))
 
 dev.off()  #this tells R not to export anything else in the plot
 
@@ -888,8 +909,6 @@ dev.off()  #this tells R not to export anything else in the plot
 
 - `r sum(pasture_chg_annual_00_16$value>0)` Countries saw pasture area expand from 2000-2016.
 
-- `r sum(pasture_chg_annual_61_99$value>0)` Countries saw pasture area expand from 1961-1999.
-
 - The countries with the most rapidly growing pasture area since 2000 are `r head(arrange(pasture_chg_annual_00_16, desc(value))$country, 3)`.
 
 
@@ -913,7 +932,7 @@ p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)
 p <- p + 
   geom_hline(aes(yintercept=1/value), world_avg, linetype="dashed") +
   geom_text(aes(x=1.5, y= (1/value)*1.1, label="World Average"), world_avg, size=4)
-p
+#p
 
 ggsave(filename = "outputs/fig_9_feed_efficiency_by_region.pdf", p, width=10, height=6) 
 ```
@@ -953,7 +972,7 @@ p <- plot_dat %>% ggplot() +
 
 #rtn - change colors to theme colors
 
-p
+#p
 ggsave(filename = "outputs/fig_4_change_in_area_by_region.pdf", plot = p, width = big_wdt, height=hgt)
 ```
 
@@ -978,7 +997,7 @@ p <- ggplot(pd, aes(x=year, y=tot, color=region)) +
   scale_x_continuous(breaks = c(2012, 2020, 2030, 2040, 2050), labels = c(2012, 2020, 2030, 2040, 2050))+
   scale_y_continuous(limits = c(0, NA))+
   theme_hc()
-p
+#p
 
 ggsave(filename = "outputs/fig_10_forecast_beef_milk_consumption.pdf", plot = p, width = wdt, height = hgt)
 ```
@@ -1005,7 +1024,7 @@ p <- pasture_projections %>%
   scale_x_discrete(labels=function(x){sub("\\s", "\n", x)})+
   scale_fill_manual(values = rep("#0d4459",6), aesthetics = "fill")
  
-p
+#p
 ggsave(filename = "outputs/fig_12_projected_pasture_2010_2050.pdf", plot = p, height = hgt, width = wdt)
 ```
 
@@ -1029,7 +1048,7 @@ p <- combined_country %>%
   scale_y_continuous(labels = point)+
   scale_color_hc(labels = climate_labeller)+
   theme_hc()
-p
+#p
 ggsave(filename = "outputs/fig_5_pasture_change_by_climate.pdf", plot = p, width = wdt , height = hgt)
 
 ###########
@@ -1105,7 +1124,7 @@ p <- pd %>% filter(Country != "Oceania") %>% #plot w/o Oceania
   theme(legend.title = element_blank())+
   theme_hc()
 
-p
+#p
 
 ggsave(filename = "outputs/fig_11_domestic_production_to_supply.pdf", plot = p) #, width=wdt, height=hgt
 ```
