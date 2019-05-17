@@ -68,7 +68,7 @@ bti_theme <- theme_bw(base_family = font_family, base_size = 12) +
         )
 
 #color template
-cols <- c("#0d4459", "#00a990", "#d05527", "#a33332", "#b2b2b1", "#dfb9a6")
+cols <- c("#0d4459", "#00a990", "#d05527", "#a33332", "#b2b2b1", "#dfb9a6", "#b381d0", "#2A2A2A", "#ecc627")
 
 #shortcut for adding commas to numbers in graphs, and labels
 point <- format_format(big.mark = ",", decimal.mark = ".", scientific = FALSE)
@@ -323,7 +323,7 @@ p <- ggplot(pasture_global) +
   scale_x_continuous(breaks = since_1961) + 
   bti_theme
 
-p
+#p
 
 ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
 ```
@@ -412,7 +412,7 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 
 
 
-## Fig 6 and 7 and A5 - Productivity Gains Key to Peak Pasture
+## Fig 6 and 7 and A3 - Productivity Gains Key to Peak Pasture
 ```{r Pct change values in production and consumption }
 top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
@@ -525,7 +525,7 @@ p <- pd %>%
   bti_theme + 
   theme(legend.position = "none")+
   scale_color_manual(values = cols)
-p
+#p
 
 ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
 ```
@@ -613,7 +613,7 @@ china_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group
 - For instance, beef yields in Africa, Brazil, and China are all substantially lower than in higher-income Australia— `r africa_beef_yld_pct_lower_aus`%, `r brazil_beef_yld_pct_lower_aus`% and `r china_yld_pct_lower_aus` % less, respectively.
 
 
-```{r Fig A4 - Graph change in  meat & milk yields and stocking by group}
+```{r Fig A3 - Graph change in  meat & milk yields and stocking by group}
 p <- regional_indices %>%
   filter(year==2013) %>% #filter to just see % change from 1961-2013
   select(year, group, pct_chg_d_yld, pct_chg_m_yld) %>% #select just yields and stocking to graph  # can add  pct_chg_stocking
@@ -633,9 +633,9 @@ p <- regional_indices %>%
     bti_theme +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-p
+#p
 
-ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p)
+ggsave(filename = "outputs/fig_a3_change_in_yld_by_geographic_group.pdf", p)
 ```
 
 - Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)*100`% since 1961
@@ -683,12 +683,12 @@ income_indices <- combined_country %>%
   filter(group !="Former Soviet Union", #Omitting former soviet union becuase of data consistency problems
          year >= baseline_year) %>%   #limit to years after baseline
   group_by(year, inc_group_16) %>%
-  summarize(m_yld = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T),  #beef yield in  tonnes/animal
-            d_yld = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T),  # milk yield in  tonnes/animal
-            m_cons = sum(m_cons_total, na.rm=T),  #beef consumption total in  tonnes
-            d_cons = sum(d_prod, na.rm=T),  # dairy production total in  tonnes
-            m_prod = sum(m_prod, na.rm=T),  #beef production total in  tonnes
-            d_prod = sum(d_cons_total, na.rm=T),  # dairy consumption tot in tonnes
+  summarize(m_yld = sum(m_prod, na.rm=T)/sum(m_head, na.rm=T),  #beef yield in  metric tons/animal
+            d_yld = sum(d_prod, na.rm=T)/sum(d_head, na.rm=T),  # milk yield in  metric tons/animal
+            m_cons = sum(m_cons_total, na.rm=T),  #beef consumption total in  metric tons
+            d_cons = sum(d_prod, na.rm=T),  # dairy production total in  metric tons
+            m_prod = sum(m_prod, na.rm=T),  #beef production total in  metric tons
+            d_prod = sum(d_cons_total, na.rm=T),  # dairy consumption tot in metric tons
             area = sum(area, na.rm=T),  #pasture area in hectares
             stocks = sum(stocks, na.rm=T), # cattle stocks in animals
             gdp = sum(gdp, na.rm=T),  # gdp
@@ -737,7 +737,7 @@ pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp)
 p <- ggplot(pasture_area_change_by_income) +
   geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
   labs(x="Year", y="Pasture Area (Mha)", 
-       title = "Pasture Rose for Upper-Middle & Fell for High Income Countries Since 1961", 
+       title = "", 
        caption = "Omitting Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(limits = c(-250,250)) + 
@@ -748,7 +748,7 @@ p <- ggplot(pasture_area_change_by_income) +
   bti_theme
 
 p
-ggsave(filename = "outputs/alt_fig_3_abs_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
+ggsave(filename = "outputs/alt_fig_3_abs_change_in_pasture_by_income_group.pdf", p) #width = 8, height=8
 ```
 
 ```{r calculate percent change in pasture by income}
@@ -776,8 +776,8 @@ p <- pasture_by_income %>%
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
   bti_theme
 
-p
-ggsave(filename = "outputs/fig_3pct_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
+#p
+ggsave(filename = "outputs/fig_3pct_change_in_pasture_by_income_group.pdf")
 ```
 
 
@@ -787,15 +787,15 @@ p <- income_indices %>%
   #rename(Milk= abs_chg_d_yld , Beef=abs_chg_m_yld) %>%
   gather(key = variable, value = value, Beef, Milk) %>% #gather beef & dairy yields for graphing together
   filter(year<=2016) %>%
-  ggplot() + geom_line(aes(x=year, y=value * t_to_kg, color = inc_group_16)) +  #convert yields from tonnes to kg
+  ggplot() + geom_line(aes(x=year, y=value * t_to_kg, color = inc_group_16)) +  #convert yields from metric tons to kg
   labs(x="", y="Yields (kg product/animal)", 
        caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
+  bti_theme +
   scale_x_continuous(breaks = since_1961_2013) + 
   scale_y_continuous(labels = point) + 
-  scale_color_discrete(name ="Income Group",
+  scale_color_manual(values=cols, name ="Income Group",
                        breaks=c("H", "UM", "LM", "L"),
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
-  theme_hc() +
   facet_wrap(variable~., scales = "free")
 
 #p
@@ -804,9 +804,9 @@ ggsave(filename = "outputs/fig_8_change_in_yield_by_income_group_v1.png", p)
 
 
 ## Fig 2 and A3 - Maps
-```{r Fig A3 - Map of pasture area change by country since 1961 (in Mha)}
+```{r Fig A2 - Map of pasture area change by country since 1961 (in Mha)}
 
-pdf("outputs/fig_a3_map_pasture_change_61-16.pdf",width=big_wdt,height=hgt)
+pdf("outputs/fig_a2_map_pasture_change_61-16.pdf",width=big_wdt,height=hgt)
 
 base_year <- 1961
 final_year <- 2016
@@ -916,16 +916,16 @@ pd <-  pd %>% filter(region!=regions[1])
 p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
   geom_col()+
   labs(x="", y = "kg beef/kg dry matter consumption")+
+  bti_theme+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
   facet_wrap(variable~., scales = "free")+
-  scale_fill_manual(values = cols, name ="",labels = c("Pasture Contracted", "Pasture Expanded"))+
-  bti_theme
+  scale_fill_manual(values = cols, name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
   
-
+  
 p <- p + 
   geom_hline(aes(yintercept=1/value), world_avg, linetype="dashed") +
   geom_text(aes(x=1.5, y= (1/value)*1.1, label="World Average"), world_avg, size=4)
-p
+#p
 
 ggsave(filename = "outputs/fig_9_feed_efficiency_by_region.pdf", p, width=10, height=6) 
 ```
@@ -954,19 +954,18 @@ plot_dat  <- left_join(filter(plot_dat, year>=baseline_year), temp) %>%
 
 p <- plot_dat %>% ggplot() +
     geom_line(aes(x=year, y=change*ha_to_mha, color=group,group=group, region=group)) +
-  labs(title="Pasture Expansion Trends Have Been Divergent",
+  labs(title="",
        x="",
        y="Pasture Area Change Since 1961 (Mha)") +
   scale_y_continuous(labels = point) +
   scale_x_continuous(breaks = since_1961) + 
+  bti_theme+
   theme(legend.title =element_blank())+
-  theme_hc()+
-  scale_color_manual(values=c("black", "yellow", "green", "red", "orange", "blue", "purple", "orchid", "skyblue"))
-
-#rtn - change colors to theme colors
+  scale_color_manual(values=cols)
 
 #p
-ggsave(filename = "outputs/fig_4_change_in_area_by_region.pdf", plot = p, width = big_wdt, height=hgt)
+
+ggsave(filename = "outputs/fig_4_change_in_area_by_region.pdf", plot = p) #, width = big_wdt, height=hgt
 ```
 
 
@@ -983,16 +982,20 @@ pd <- pd %>%
   group_by(region, item, year) %>% 
   summarize(tot = sum(tot_cons * thousand_to_million, na.rm=T))  #summarize regional demand in million tons
 
+pd$item <- recode(pd$item, "Beef and veal" = "Beef", "Raw milk" = "Milk")
+
 p <- ggplot(pd, aes(x=year, y=tot, color=region)) +
   geom_line() +
-  labs(x="", y = "Million tonnes", caption = "Data: FAO. 2018. The future of food and agriculture – Alternative pathways to 2050. Rome.", color = "Countries")+ 
-  facet_wrap(item~., ncol = 1, scales = "free")+
+  labs(x="", y = "Million metric tons", caption = "Data: FAO. 2018. The future of food and agriculture – Alternative pathways to 2050. Rome.\n Values are for 'Beef and veal' and 'Raw milk' FAO items", color = "Countries")+ 
+  scale_color_manual(values = cols)+
+  facet_wrap(item~., nrow = 1, scales = "free")+
   scale_x_continuous(breaks = c(2012, 2020, 2030, 2040, 2050), labels = c(2012, 2020, 2030, 2040, 2050))+
   scale_y_continuous(limits = c(0, NA))+
-  theme_hc()
+  bti_theme 
+
 #p
 
-ggsave(filename = "outputs/fig_10_forecast_beef_milk_consumption.pdf", plot = p, width = wdt, height = hgt)
+ggsave(filename = "outputs/fig_10_forecast_beef_milk_consumption.pdf", plot = p)
 ```
 
 ```{r Fig 12 Bar Chart of Pasture Projections}
@@ -1012,13 +1015,13 @@ p <- pasture_projections %>%
   labs(x="Projection Name",
        y="Projected Pasture Change 2010-2050 (Mha)",
        caption = "Sources: Riahi et al. (2017); Searchinger et al. (2018)")+
-  theme_hc()+
+  bti_theme+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")+
   scale_x_discrete(labels=function(x){sub("\\s", "\n", x)})+
   scale_fill_manual(values = rep("#0d4459",6), aesthetics = "fill")
  
 #p
-ggsave(filename = "outputs/fig_12_projected_pasture_2010_2050.pdf", plot = p, height = hgt, width = wdt)
+ggsave(filename = "outputs/fig_12_projected_pasture_2010_2050.pdf", plot = p)
 ```
 
 ## Fig 5 and Analyses by Climate Zone
@@ -1033,16 +1036,18 @@ p <- combined_country %>%
   summarize(tot = sum(abs_chg_area, na.rm=T)) %>%
   ggplot(aes(x=year, y=tot*ha_to_mha, color = climate))+
   geom_line()+
-    labs(title = "Pasture Shifted from Arid to Temperate & Humid Areas",
-       x="Year",
+    labs(title = "",
+       x="",
        y="Pasture Area Change since 1961 (Mha)",
        caption = "Adapted from Godde et al. (2018)",
        color="Climate")+  #change legend title
   scale_y_continuous(labels = point)+
-  scale_color_hc(labels = climate_labeller)+
-  theme_hc()
+  scale_x_continuous(breaks = since_1961)+
+  scale_color_manual(values=cols, labels = climate_labeller)+
+  bti_theme
 #p
-ggsave(filename = "outputs/fig_5_pasture_change_by_climate.pdf", plot = p, width = wdt , height = hgt)
+
+ggsave(filename = "outputs/fig_5_pasture_change_by_climate.pdf", plot = p)
 
 ###########
 # Other visualizations of change in pasture area
@@ -1111,11 +1116,12 @@ pd <- pd %>%
 p <- pd %>% filter(Country != "Oceania") %>% #plot w/o Oceania
   ggplot(aes(x=Year, y=ratio, color=Country)) + 
   geom_line()+
-  scale_y_continuous(limits = c(0,1.5))+
+  scale_y_continuous(limits = c(0.75,1.25))+
   scale_x_continuous(breaks = since_1961_2013)+
   labs(x="", y="Ratio of Domestic Bovine Meat\n Production to Supply", caption = "Omitting Oceania, which produces over 2x domestic supply")+
+  bti_theme+
   theme(legend.title = element_blank())+
-  theme_hc()
+  scale_color_manual(values=cols)
 
 #p
 
@@ -1125,7 +1131,7 @@ ggsave(filename = "outputs/fig_11_domestic_production_to_supply.pdf", plot = p) 
 
 # Report Appendices
 
-## A5 Yield growth in high income countries may be slowing
+## A4 Yield growth in high income countries may be slowing
 ```{r Calculate Yield Growth in High income countries by decade}
 pd <-   combined_country %>%
   filter(year<=2013) %>% #series only goes up to 2013
@@ -1136,7 +1142,7 @@ pd <-   combined_country %>%
   group_by(item, inc_group_16) %>% 
   mutate(pct_chg = (yield/dplyr::lag(yield))) #annual pct change by item
 ```
-```{r Fig A5 - Graph Yield Slowdown in High Income Countries}
+```{r Fig A4 - Graph Yield Slowdown in High Income Countries}
 p <- pd %>% 
   filter(inc_group_16 %in% c("H", "UM")) %>%  #specify income groups
   ggplot(aes(x=year, y=pct_chg-1, color=inc_group_16))+  #color different items
@@ -1146,14 +1152,12 @@ p <- pd %>%
        x = "") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
   scale_x_continuous(breaks = since_1961) +
-    theme_hc()+
-  #theme(legend.position = "none")+
   facet_wrap(item~.)+
-  scale_color_hc(name ="Income Group",
+  bti_theme+
+  scale_color_manual(values=cols, name ="Income Group",
                        breaks=c("H", "UM", "LM", "L"),
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
 
-ggsave(plot=p, filename = "outputs/fig_a5_yield_growth_slowdown.pdf") #, width = 8, height = 8
+p
+ggsave(plot=p, filename = "outputs/fig_a4_yield_growth_slowdown.pdf") #, width = 8, height = 8
 ```
-
-
