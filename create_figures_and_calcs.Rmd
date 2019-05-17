@@ -8,14 +8,9 @@ output:
 ---
 #Setup 
 ```{r global_options, echo=FALSE, message=FALSE}
-#Enter code in console to navigate to Peak Pasture Folder before starting
-#setwd("~/Google Drive File Stream/My Drive/BTI Research/Food & Farming/Peak Pasture")
-
 #set knitr display options
 library(knitr)
-opts_chunk$set(fig.width=10, fig.height=10, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, results='hide')
-
-#opts_knit$set(root.dir = "../../Peak Pasture/data")
+opts_chunk$set(fig.width=10, fig.height=10, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE)
 ```
 
 ```{r load packages}
@@ -532,7 +527,7 @@ p <- pd %>%
   scale_color_manual(values = cols)
 p
 
-ggsave(filename = "outputs/tfig_7_annual_beef_milk_consumption_change.pdf", plot = p)
+ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
 ```
 
 ```{r Calculate pct change in global cattle meat and milk yields, production and consumption}
@@ -572,17 +567,18 @@ p <- global_indices %>%
   ggplot()+
     geom_line(aes(x=year, y=(value-1), color=Variable))+
   scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
-  labs(title = "Production Has Increased While Pasture Area Has Plateaued",
-       y = paste0("Percent Change Since ", base_year),
+  labs(y = paste0("Percent Change Since ", base_year),
        x = "",
        caption="Omitting Former Soviet Union") +
   scale_y_continuous(labels = scales::percent_format(), limits=c(0,NA))+
-  scale_color_discrete(name = element_blank(),
+  scale_color_manual(values = cols,name = element_blank(),
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
-  theme_hc()
-#p
-ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p, width = wdt, height=hgt)
+  bti_theme
+
+p
+
+ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p)
 ```
 
 ```{r Calculate change in  meat & milk yields and stocking by geographic group}
@@ -624,21 +620,22 @@ p <- regional_indices %>%
   gather(key = variable, value = "value", -year, -group) %>% #gather variables into one column for easy graphing
   ggplot(aes(x= reorder(group, -value), y=value-1))+
     geom_col(aes(fill=variable, group=variable), position="dodge") +
-    labs(title="Change in Dairy and Beef Yields by Region (1961-2016)",
-         x=element_blank(),
+    labs(x=element_blank(),
          y="Percent Increase Since 1961",
          caption = "Omitting Former Soviet Union") +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
     #scale_x_continuous(breaks = since_1961) +
     theme(legend.title = element_blank(), legend.position = "none")+
-    scale_fill_hc(name=element_blank(),
-                         breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
-                         labels=c("Dairy Yields", "Beef Yields", "Cattle Stocks per Pasture Area"))+
-    theme_hc()+
+    scale_fill_manual(values = cols, 
+                      name=element_blank(),
+                      breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
+                      labels=c("Dairy Yields", "Beef Yields", "Cattle Stocks per Pasture Area"))+
+    bti_theme +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#p
-ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p, width=wdt, height=hgt)
+p
+
+ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p)
 ```
 
 - Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)*100`% since 1961
@@ -744,12 +741,13 @@ p <- ggplot(pasture_area_change_by_income) +
        caption = "Omitting Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(limits = c(-250,250)) + 
-  scale_color_hc(name ="Income Group",
-                       breaks=c("H", "UM", "LM", "L"),
-                       labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
-  theme_hc()
+  scale_color_manual(values = cols,
+                     name ="Income Group",
+                     breaks=c("H", "UM", "LM", "L"),
+                     labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
+  bti_theme
 
-#p
+p
 ggsave(filename = "outputs/alt_fig_3_abs_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
 ```
 
@@ -770,16 +768,15 @@ p <- pasture_by_income %>%
   ggplot() +
   geom_line(aes(x=year, y = (pct_chg_area-1), color = inc_group_16)) + 
   labs(x="", y="Percent Change since 1961", 
-       title = "Pasture Growth is  Closely Tied to Economic Growth ", 
        caption = "Omitting Countries Missing World Bank Income Group") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
-  scale_color_discrete(name ="Income Group",
+  scale_color_manual(values = cols, name ="Income Group",
                        breaks=c("H", "UM", "LM", "L"),
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
-  theme_hc()
+  bti_theme
 
-#p
+p
 ggsave(filename = "outputs/fig_3pct_change_in_pasture_by_income_group.pdf", p, width = 8, height=8)
 ```
 
@@ -808,25 +805,18 @@ ggsave(filename = "outputs/fig_8_change_in_yield_by_income_group_v1.png", p)
 
 ## Fig 2 and A3 - Maps
 ```{r Fig A3 - Map of pasture area change by country since 1961 (in Mha)}
+
+pdf("outputs/fig_a3_map_pasture_change_61-16.pdf",width=big_wdt,height=hgt)
+
+base_year <- 1961
+final_year <- 2016
+
 viz <- combined_country %>%
-  filter(year %in% c(2016)) %>%
+  filter(year %in% c(final_year)) %>%
   select(country, year, abs_chg_area, iso_code) %>%
   dplyr::group_by(country, iso_code) %>% 
-  dplyr::summarize(value = (sum(abs_chg_area, na.rm=T)/1000000)/(2000-1961)) %>% #avg. annual change in Mha
+  dplyr::summarize(value = (sum(abs_chg_area, na.rm=T)/1000000)/(final_year-base_year)) %>% #avg. annual change in Mha
   filter(is.na(value)==F)
-
-# #calculate percent of change in global pasture area is accounted for by Brazil and China 
-# brazil_1961_pasture_change_pct_of_global <- 
-#   filter(viz, country=="Brazil")$value / 
-#   summarize(group_by(viz), value=sum(value, na.rm=T))$value
-# 
-# china_1961_pasture_change_pct_of_global <- 
-#   filter(viz, country=="China")$value / 
-#   summarize(group_by(viz), value=sum(value, na.rm=T))$value
-# 
-# saudi_1961_pasture_change_pct_of_global <- 
-#   filter(viz, country=="Saudi Arabia")$value / 
-#   summarize(group_by(viz), value=sum(value, na.rm=T))$value
 
   
 #match data on ISO code. 5 more countries in our data match when using ISO code  
@@ -836,16 +826,17 @@ viz <- joinCountryData2Map(dF = as.data.frame(viz), #need to coerce to df or the
 #specify details for map: variable to map, title, legend breaks, colors
 mapParams <- mapCountryData(viz, 
                             nameColumnToPlot="value", 
-                            mapTitle="Fig : Change in Pasture Area 1961-2016 (Million ha)", 
-                            numCats = 30, #number of bins 
-                            catMethod = "diverging",
-                            # = c(-20,-10,-5,-0.005,0.005,5,10,15),
-                            colourPalette =   "diverging", #c("dark green", "green", "white", "orange", "red"),
+                            mapTitle="", 
+                            catMethod = c(-3,-2,-1,-.01,.01,1,2,3),
+                            colourPalette = c("#00a990", "white","#a33332"),
                             oceanCol = "aliceblue",
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
+
 #create map
-#do.call(addMapLegend, c(mapParams, legendLabels="all", legendWidth=0.5))
+do.call(addMapLegend, c(mapParams, legendLabels="all", legendWidth=0.5))
+
+dev.off()  #this tells R not to export anything else in the plot
 ```
 
 ```{r Fig 2 - Map of avg. annual pasture area change 2000-2016}
@@ -863,24 +854,25 @@ pasture_chg_annual_00_16 <- combined_country %>%
   filter(is.na(value)==F)
 
 viz <- joinCountryData2Map(dF = as.data.frame(pasture_chg_annual_00_16), #need to coerce to df or theres an error
-#match data on ISO code. 5 more countries in our data match when using ISO code  
-                           joinCode="ISO3", nameJoinColumn="iso_code")
+                           joinCode="ISO3", nameJoinColumn="iso_code") #match data on ISO code. 5 more countries in our data match when using ISO code 
 
 #specify details for map: variable to map, title, legend breaks, colors
 mapParams <- mapCountryData(viz, 
                             nameColumnToPlot="value", 
-                            mapTitle="Average Annual Change in Pasture Area 2000-2016 (Million ha)", 
+                            mapTitle="", 
                             #numCats = 20, #number of bins 
-                            catMethod = c(-4,-3,-2,-1,-.5,-.0001,.0001,.5,1,2,3,4),
+                            catMethod = c(-3.5,-2.5,-1.5,-.5,-.001,.001,.5,1.5,2.5,3.5),
                             colourPalette = c("#00a990", "white","#a33332"),
                             oceanCol = "aliceblue",
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
 #create map
-#do.call(addMapLegend, c(mapParams, legendLabels="all", legendIntervals = "page",legendWidth=0.5))
+do.call(addMapLegend, c(mapParams, legendLabels="all",legendWidth=0.5)) #legendIntervals = "page"
 
 dev.off()  #this tells R not to export anything else in the plot
 
+######## 
+######## other visualization options
 ## visual option 1
 #catMethod = seq(-3.5,3.5,.1), 
 #colourPalette = c("#0d4459", "#00a990", "white","#d05527", "#a33332")
@@ -925,14 +917,15 @@ p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)
   geom_col()+
   labs(x="", y = "kg beef/kg dry matter consumption")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
-  theme_hc()+
   facet_wrap(variable~., scales = "free")+
-  scale_fill_hc(name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
+  scale_fill_manual(values = cols, name ="",labels = c("Pasture Contracted", "Pasture Expanded"))+
+  bti_theme
+  
 
 p <- p + 
   geom_hline(aes(yintercept=1/value), world_avg, linetype="dashed") +
   geom_text(aes(x=1.5, y= (1/value)*1.1, label="World Average"), world_avg, size=4)
-#p
+p
 
 ggsave(filename = "outputs/fig_9_feed_efficiency_by_region.pdf", p, width=10, height=6) 
 ```
