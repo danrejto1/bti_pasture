@@ -22,7 +22,7 @@ library(rworldmap)
 library(rlang)
 library(broom)
 
-#for using downloaded Futura font 
+#for using downloaded Futura font (must download or buy futura from internet first)
 library(showtext)
 font_add(family="Futura", regular = "~/Library/Fonts/Futura Medium.ttf")
 showtext_auto()
@@ -52,7 +52,7 @@ fao_forecast <- read_csv(file = "data/clean_data/fao_beef_milk_consumption_forec
 
 ```{r Set themes}
 #BTI visual theme
-font_family <-"Futura"   #"Helvetica"  #
+font_family <-"Futura"   #alternative if you dont have futura on comptuer is "Helvetica"
 
 bti_theme <- theme_bw(base_family = font_family, base_size = 12) + 
   theme(plot.title = element_text(color = "#0d4459",  size = 14),
@@ -60,13 +60,13 @@ bti_theme <- theme_bw(base_family = font_family, base_size = 12) +
        axis.title.y = element_text(size = 12),
         axis.line.x = element_blank(),
         axis.line.y = element_blank(),
-        panel.grid.major.y = element_line(colour = "#D8D8D8"), panel.grid.minor.y = element_blank(), 
+        panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), 
         panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
         panel.border = element_blank(), panel.background = element_blank(),  #element_rect(color = "black", size = 1)  #used for border around plot
         legend.position = "bottom", legend.key = element_rect(fill = "#FFFFFF00"),
         complete = FALSE
         )
-
+  
 #color template
 cols <- c("#0d4459", "#00a990", "#d05527", "#a33332", "#b2b2b1", "#dfb9a6", "#b381d0", "#2A2A2A", "#ecc627")
 
@@ -176,9 +176,9 @@ abs_since_1961 <- function(x) ((x-x[1]))
 
 ```{r Filter All Data}
 full_data  <- combined_country #save for exploratory analysis in appendix
+
 combined_country <- combined_country %>%
-  filter(inc_group_16 %in% c("H", "UM", "LM", "L"), #omit small countries w/o income for plotting
-         country !="Saudi Arabia") #omit because FAO omitted it in its pasture land use analysis, Ramankutty et al. discuss the FAO values as being orders of magnitude above subnational values, and because GDP data must be outlier
+  filter(country !="Saudi Arabia") #omit because FAO omitted it in its pasture land use analysis, Ramankutty et al. discuss the FAO values as being orders of magnitude above subnational values, and because GDP data must be outlier
 
 #earlier version of code omitted Iran: code for doing this is here
 # !str_detect(country, "Iran"), #Omit Iran since its pasture suddenly drops ~17 Mha without explanation in 2005.
@@ -237,20 +237,23 @@ kg_to_t <- 1/1000
 
 ```{r Create groups for graphs}
 #create grouping variable that recodes major minor and countryies 
-rest_of_world <-  c("Central America","Caribbean", "South-Eastern Asia","Southern Asia", "Western Asia", "Eastern Asia", "Oceania", NA)
+rest_of_world <-  c("Central America","Caribbean", "South-Eastern Asia","Southern Asia", "Western Asia", "Eastern Asia", "Oceania", NA, 
+                    "North Macedonia", "Palestine", "C̫te d'Ivoire", "Runion")
 combined_country$group <- combined_country$major_group
 combined_country[combined_country$minor_group %in% rest_of_world,]$group <- "Rest of World"
+combined_country[combined_country$country %in% rest_of_world,]$group <- "Rest of World"
+combined_country[combined_country$country %in% rest_of_world,]$minor_group <- "NA"
 
-combined_country[combined_country$minor_group=="Former Soviet Union",]$group <- "Former Soviet Union"
-combined_country[combined_country$minor_group=="Northern America",]$group <- "Northern America"
-combined_country[combined_country$minor_group=="Northern America",]$group <- "Northern America"
-combined_country[combined_country$minor_group=="South America",]$group <- "Rest of South America"
+combined_country <- filter(combined_country, is.na(minor_group)==F) #remove empty runion row that persisted from previous cleaning
+
+combined_country[combined_country$minor_group == "Former Soviet Union",]$group <- "Former Soviet Union"
+combined_country[combined_country$minor_group == "Northern America",]$group <- "Northern America"
+combined_country[combined_country$minor_group == "Northern America",]$group <- "Northern America"
+combined_country[combined_country$minor_group == "South America",]$group <- "Rest of South America"
 combined_country[combined_country$country =="China",]$group <- "China"
 combined_country[combined_country$country =="Brazil",]$group <- "Brazil"
 combined_country[combined_country$country =="Australia",]$group <- "Australia"
 
-#create list of countries with largest pasture area in period 1992-2016 (Mexico was in top 10 pre USSR dissolution)
-biggest_pasture_countries <- c("United States of America", "Brazil", "China", "Australia", "Kazakhstan", "Saudi Arabia", "Mongolia", "Argentina", "Russia", "South Africa") #
 ```
 
 # Chapter 1 Calculations
@@ -287,9 +290,8 @@ Demand for beef alone is forecast to rise `r round(beef_cons_12_50,2)`% by 2050,
 ## Fig 1 & Global Pasture Area Has Peaked
 ```{r Fig 1 Line Graph of global pasture area since 1961}
 pasture_global <- combined_country %>%
-  filter(is.na(area)==F) %>% 
-  group_by(year) %>%
-  summarize(area=sum(area)) %>%
+  filter(year<2017) %>% group_by(year) %>%
+  summarize(area=sum(area, na.rm=T)) %>%
   ungroup()
 
 #calculate absolute and % decline from 2000
@@ -319,7 +321,9 @@ p <- ggplot(pasture_global) +
   labs(
     #title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall_2000_16,1), "% (", round(pasture_global_abs_fall_2000_16/1000000,1), " Mha) since 2000"),  
        y = "Global Pasture Area (billion ha)", 
-       x = "") +
+       x = "",
+       caption = "Source: FAO (2019)") +
+  scale_y_continuous(limits = c(2.7, 3.00)) + 
   scale_x_continuous(breaks = since_1961) + 
   bti_theme
 
@@ -518,7 +522,7 @@ p <- pd %>%
   geom_point(alpha=.2) + 
   labs(y = paste0("Annual Percent Change"),
        x = "",
-       caption = "Categories represent FAO 'Bovine Meat' and 'Milk - Excluding Butter' items.") +
+       caption = "Categories represent FAO 'Bovine Meat' and 'Milk - Excluding Butter' items.\nLines derived from LOESS smoothing. Source: FAO (2019).") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(breaks = since_1961) +
   facet_wrap(item~.)+
@@ -569,14 +573,14 @@ p <- global_indices %>%
   scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
   labs(y = paste0("Percent Change Since ", base_year),
        x = "",
-       caption="Omitting Former Soviet Union") +
+       caption="Omitting Former Soviet Union. Source: FAO (2019).") +
   scale_y_continuous(labels = scales::percent_format(), limits=c(0,NA))+
   scale_color_manual(values = cols,name = element_blank(),
                        breaks=c("pct_chg_area", "pct_chg_d_prod", "pct_chg_m_prod", "pct_chg_stocks"),
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
   bti_theme
 
-p
+#p
 
 ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p)
 ```
@@ -602,7 +606,8 @@ regional_indices <- combined_country %>%
          pct_chg_m_cons = pct_since_1961(m_cons),
          pct_chg_d_cons = pct_since_1961(d_cons),
          pct_chg_area = pct_since_1961(area),
-         pct_chg_stocking = pct_since_1961(stocking))
+         pct_chg_stocking = pct_since_1961(stocking)) %>% 
+  ungroup()
 
 australia_beef_yld<- filter(regional_indices, year==2013, group=="Australia")$m_yld
 africa_beef_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group=="Africa")$m_yld / australia_beef_yld),2)*100
@@ -614,23 +619,25 @@ china_yld_pct_lower_aus <- round(1 - (filter(regional_indices, year==2013, group
 
 
 ```{r Fig A3 - Graph change in  meat & milk yields and stocking by group}
-p <- regional_indices %>%
-  filter(year==2013) %>% #filter to just see % change from 1961-2013
-  select(year, group, pct_chg_d_yld, pct_chg_m_yld) %>% #select just yields and stocking to graph  # can add  pct_chg_stocking
-  gather(key = variable, value = "value", -year, -group) %>% #gather variables into one column for easy graphing
-  ggplot(aes(x= reorder(group, -value), y=value-1))+
-    geom_col(aes(fill=variable, group=variable), position="dodge") +
+pd <- regional_indices %>%
+    filter(year==2013) %>% #filter to just see % change from 1961-2013
+  select(year, group, pct_chg_d_yld, pct_chg_m_yld, pct_chg_stocking) %>%   #select just yields and stocking to graph  
+  gather(key = variable, value = "value", -year, -group) #gather variables into one column for easy graphing
+
+pd$group <- factor(pd$group, levels = pd$group[order(pd$value[pd$variable == "pct_chg_d_yld"], decreasing = T)]) #reorder group for grpahing
+  
+p <- ggplot(pd, aes(x= group, y = value-1, fill = variable, group = variable))+   
+    geom_bar(stat="identity", position="dodge") +
     labs(x=element_blank(),
-         y="Percent Increase Since 1961",
-         caption = "Omitting Former Soviet Union") +
+         y="Percent Increase 1961-2013",
+         caption = "Omitting Former Soviet Union. Source: FAO (2019).")  +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-    #scale_x_continuous(breaks = since_1961) +
     theme(legend.title = element_blank(), legend.position = "none")+
     scale_fill_manual(values = cols, 
                       name=element_blank(),
                       breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
                       labels=c("Dairy Yields", "Beef Yields", "Cattle Stocks per Pasture Area"))+
-    bti_theme +
+  bti_theme +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #p
@@ -721,7 +728,7 @@ income_indices <- income_indices %>%
 
 ```{r Alt Fig 3 - line graph abs change in pasture by income}
 pasture_area_by_income <- combined_country %>%
-  filter(inc_group_16 !="..") %>%    #Omitting countries w/o income group - e.g. British Virgin Islands
+  filter(inc_group_16 !="..") %>%  #Omitting countries w/o income group - e.g. British Virgin Islands
   group_by(year, inc_group_16) %>%
   summarize(tot = sum(area, na.rm = T))
 #Omitting NA's - currently Czechoslovakia, Falkland Islands (Malvinas), French Guiana, Guadeloupe, Martinique, Mayotte, Montserrat, Niue, Norfolk Island, Pacific Islands Trust Territory, Réunion, Saint Helena 
@@ -738,7 +745,7 @@ p <- ggplot(pasture_area_change_by_income) +
   geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
   labs(x="Year", y="Pasture Area (Mha)", 
        title = "", 
-       caption = "Omitting Countries Missing World Bank Income Group") +
+       caption = "Omitting Countries Missing World Bank Income Group. Source: FAO (2019).") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(limits = c(-250,250)) + 
   scale_color_manual(values = cols,
@@ -747,7 +754,7 @@ p <- ggplot(pasture_area_change_by_income) +
                      labels=c("High", "Upper-Middle", "Lower-Middle", "Low")) +
   bti_theme
 
-p
+#p
 ggsave(filename = "outputs/alt_fig_3_abs_change_in_pasture_by_income_group.pdf", p) #width = 8, height=8
 ```
 
@@ -768,7 +775,7 @@ p <- pasture_by_income %>%
   ggplot() +
   geom_line(aes(x=year, y = (pct_chg_area-1), color = inc_group_16)) + 
   labs(x="", y="Percent Change since 1961", 
-       caption = "Omitting Countries Missing World Bank Income Group") +
+       caption = "Omitting countries missing World Bank income group. Sources: FAO (2019). World Bank (2018)") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
   scale_color_manual(values = cols, name ="Income Group",
@@ -789,7 +796,7 @@ p <- income_indices %>%
   filter(year<=2016) %>%
   ggplot() + geom_line(aes(x=year, y=value * t_to_kg, color = inc_group_16)) +  #convert yields from metric tons to kg
   labs(x="", y="Yields (kg product/animal)", 
-       caption = "Omitting Former Soviet Union & Countries Missing World Bank Income Group") +
+       caption = "Omitting Former Soviet Union & countries missing World Bank income group.\nSources: FAO (2019). World Bank (2018)") +
   bti_theme +
   scale_x_continuous(breaks = since_1961_2013) + 
   scale_y_continuous(labels = point) + 
@@ -803,9 +810,8 @@ ggsave(filename = "outputs/fig_8_change_in_yield_by_income_group_v1.png", p)
 ```
 
 
-## Fig 2 and A3 - Maps
+## Fig 2 and A2 - Maps
 ```{r Fig A2 - Map of pasture area change by country since 1961 (in Mha)}
-
 pdf("outputs/fig_a2_map_pasture_change_61-16.pdf",width=big_wdt,height=hgt)
 
 base_year <- 1961
@@ -817,7 +823,6 @@ viz <- combined_country %>%
   dplyr::group_by(country, iso_code) %>% 
   dplyr::summarize(value = (sum(abs_chg_area, na.rm=T)/1000000)/(final_year-base_year)) %>% #avg. annual change in Mha
   filter(is.na(value)==F)
-
   
 #match data on ISO code. 5 more countries in our data match when using ISO code  
 viz <- joinCountryData2Map(dF = as.data.frame(viz), #need to coerce to df or theres an error
@@ -854,7 +859,7 @@ pasture_chg_annual_00_16 <- combined_country %>%
   filter(is.na(value)==F)
 
 viz <- joinCountryData2Map(dF = as.data.frame(pasture_chg_annual_00_16), #need to coerce to df or theres an error
-                           joinCode="ISO3", nameJoinColumn="iso_code") #match data on ISO code. 5 more countries in our data match when using ISO code 
+                           joinCode="ISO3", nameJoinColumn="iso_code") #match data on ISO code. more countries in our data match when using ISO code 
 
 #specify details for map: variable to map, title, legend breaks, colors
 mapParams <- mapCountryData(viz, 
@@ -867,7 +872,7 @@ mapParams <- mapCountryData(viz,
                             addLegend = FALSE, 
                             missingCountryCol = "grey") 
 #create map
-do.call(addMapLegend, c(mapParams, legendLabels="all",legendWidth=0.5)) #legendIntervals = "page"
+do.call(addMapLegend, c(mapParams, legendLabels="all",legendWidth=0.5)) #alternate display for legend legendIntervals = "page"
 
 dev.off()  #this tells R not to export anything else in the plot
 
@@ -915,16 +920,18 @@ pd <-  pd %>% filter(region!=regions[1])
 #plot regions as bars and world average as horizontal line
 p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)) +
   geom_col()+
-  labs(x="", y = "kg beef/kg dry matter consumption")+
+  labs(x="", 
+       y = "kg beef/kg dry matter consumption",
+       caption="Source: Wirsenius et al. (2010)")+ #source is fue_wirsenius_2010
   bti_theme+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
   facet_wrap(variable~., scales = "free")+
   scale_fill_manual(values = cols, name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
   
-  
 p <- p + 
   geom_hline(aes(yintercept=1/value), world_avg, linetype="dashed") +
   geom_text(aes(x=1.5, y= (1/value)*1.1, label="World Average"), world_avg, size=4)
+
 #p
 
 ggsave(filename = "outputs/fig_9_feed_efficiency_by_region.pdf", p, width=10, height=6) 
@@ -948,7 +955,7 @@ plot_dat <- combined_country %>%
 temp <- plot_dat %>% 
   filter(year==baseline_year) %>% ungroup() %>% select(group, "baseline"=tot) 
   
-#merge with pasture area by income group and subtract to get change since baseline
+#merge  and subtract to get change since baseline
 plot_dat  <- left_join(filter(plot_dat, year>=baseline_year), temp) %>%
   mutate(change=tot-baseline)
 
@@ -956,7 +963,8 @@ p <- plot_dat %>% ggplot() +
     geom_line(aes(x=year, y=change*ha_to_mha, color=group,group=group, region=group)) +
   labs(title="",
        x="",
-       y="Pasture Area Change Since 1961 (Mha)") +
+       y="Pasture Area Change Since 1961 (Mha)",
+       caption = "FAO (2019)") +
   scale_y_continuous(labels = point) +
   scale_x_continuous(breaks = since_1961) + 
   bti_theme+
@@ -986,7 +994,9 @@ pd$item <- recode(pd$item, "Beef and veal" = "Beef", "Raw milk" = "Milk")
 
 p <- ggplot(pd, aes(x=year, y=tot, color=region)) +
   geom_line() +
-  labs(x="", y = "Million metric tons", caption = "Data: FAO. 2018. The future of food and agriculture – Alternative pathways to 2050. Rome.\n Values are for 'Beef and veal' and 'Raw milk' FAO items", color = "Countries")+ 
+  labs(x="", y = "Million metric tons", 
+       caption = "Values are for 'Beef and veal' and 'Raw milk' FAO items.\nSource: FAO (2018).", 
+       color = "Countries")+ 
   scale_color_manual(values = cols)+
   facet_wrap(item~., nrow = 1, scales = "free")+
   scale_x_continuous(breaks = c(2012, 2020, 2030, 2040, 2050), labels = c(2012, 2020, 2030, 2040, 2050))+
@@ -1039,12 +1049,13 @@ p <- combined_country %>%
     labs(title = "",
        x="",
        y="Pasture Area Change since 1961 (Mha)",
-       caption = "Adapted from Godde et al. (2018)",
+       caption = "Source: Adapted from Godde et al. (2018)",
        color="Climate")+  #change legend title
   scale_y_continuous(labels = point)+
   scale_x_continuous(breaks = since_1961)+
   scale_color_manual(values=cols, labels = climate_labeller)+
   bti_theme
+
 #p
 
 ggsave(filename = "outputs/fig_5_pasture_change_by_climate.pdf", plot = p)
@@ -1118,7 +1129,8 @@ p <- pd %>% filter(Country != "Oceania") %>% #plot w/o Oceania
   geom_line()+
   scale_y_continuous(limits = c(0.75,1.25))+
   scale_x_continuous(breaks = since_1961_2013)+
-  labs(x="", y="Ratio of Domestic Bovine Meat\n Production to Supply", caption = "Omitting Oceania, which produces over 2x domestic supply")+
+  labs(x="", y="Ratio of Domestic Bovine Meat\n Production to Supply", 
+       caption = "Omitting Oceania, which produces over 2x domestic supply.\nSource: FAO (2019)")+
   bti_theme+
   theme(legend.title = element_blank())+
   scale_color_manual(values=cols)
@@ -1130,6 +1142,30 @@ ggsave(filename = "outputs/fig_11_domestic_production_to_supply.pdf", plot = p) 
 
 
 # Report Appendices
+
+## A1 Hyde, Original and Adjusted FAO Pasture Area
+```{r A1}
+unadjusted_pasture_area <- read_csv(file = "data/raw_data/fao_country_level_land_area.csv") %>% filter(Item == "Land under perm. meadows and pastures") %>% group_by(Year) %>% summarize(tot = sum(Value, na.rm=T)*1000) #global pasture area in ha (converted from 1000 ha)
+
+global_pasture_area <- read_csv(file = "data/raw_data/fao_global_perm_pasture_area.csv")
+
+with_saudi <- full_data %>% group_by(year) %>% summarize(tot = sum(area, na.rm=T))
+
+p <- ggplot() +
+  geom_line(data = pasture_global,aes(x = year, y = area*ha_to_bha), color = "green") +  #convert to billion ha 
+  geom_line(data = filter(with_saudi, year<2017), aes(x = year, y = tot*ha_to_bha), color = "#000000") + 
+  geom_line(data = filter(hyde, year>=1900), aes(x = year, y = area/10000000), color = "red") +  #convert to billion ha 
+  geom_line(data = unadjusted_pasture_area, aes(x = Year, y = tot*ha_to_bha), color = "blue") +  #convert to billion ha 
+  labs(y = "Global Pasture Area (billion ha)", 
+       x = "") +
+  #scale_x_continuous(breaks = since_1961) + 
+  bti_theme
+
+p
+
+#ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
+```
+
 
 ## A4 Yield growth in high income countries may be slowing
 ```{r Calculate Yield Growth in High income countries by decade}
@@ -1144,16 +1180,19 @@ pd <-   combined_country %>%
 ```
 ```{r Fig A4 - Graph Yield Slowdown in High Income Countries}
 p <- pd %>% 
-  filter(inc_group_16 %in% c("H", "UM")) %>%  #specify income groups
+  filter(inc_group_16 %in% c("H")) %>%  #specify income groups
   ggplot(aes(x=year, y=pct_chg-1, color=inc_group_16))+  #color different items
-  geom_smooth(method = "loess", se = F) + #show loess line but hide standard error bar
+  geom_smooth(method = "lm", se = T) + #show loess line but hide standard error bar
   geom_point(alpha=.2) + 
   labs(y = ("Annual Percent Change"),
-       x = "") +
+       x = "",
+       caption = "Gray represents 95% confidence interval.\nSource: FAO(2019)",
+       color="") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
   scale_x_continuous(breaks = since_1961) +
   facet_wrap(item~.)+
   bti_theme+
+  theme(legend.position = "none")+
   scale_color_manual(values=cols, name ="Income Group",
                        breaks=c("H", "UM", "LM", "L"),
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
