@@ -58,8 +58,8 @@ bti_theme <- theme_bw(base_family = font_family, base_size = 12) +
   theme(plot.title = element_text(color = "#0d4459",  size = 14),
         axis.title.x = element_text(size = 12),
        axis.title.y = element_text(size = 12),
-        axis.line.x = element_blank(),
-        axis.line.y = element_blank(),
+        axis.line.x = element_line(color="black", size = .25),
+        axis.line.y = element_line(color="black", size = .25),
         panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), 
         panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
         panel.border = element_blank(), panel.background = element_blank(),  #element_rect(color = "black", size = 1)  #used for border around plot
@@ -77,10 +77,10 @@ income_labeller <- list("H" = "High", "UM" = "Upper Middle", "LM" = "Lower Middl
 climate_labeller <- list("H" = "Humid", "A" = "Arid", "T" = "Temperate")
 
 # vars for plot sizes
-wdt <- 8 #default figure output width
-hgt <- 8 #default figure output height
-big_wdt <- 16 #width for figures with 2 facets side by side
-big_hgt <- 16 #height for figures with 2 facets on top of one another
+wdt <- 4.25 #default figure output width
+hgt <- 4.25 #default figure output height
+big_wdt <- 8.5 #width for figures with 2 facets side by side
+big_hgt <- 8.5 #height for figures with 2 facets on top of one another
 ```
 
 ```{r Functions}
@@ -322,7 +322,7 @@ p <- ggplot(pasture_global) +
     #title = paste0("Fig 1: Global Pasture Area Declined ", round(pasture_global_pct_fall_2000_16,1), "% (", round(pasture_global_abs_fall_2000_16/1000000,1), " Mha) since 2000"),  
        y = "Global Pasture Area (billion ha)", 
        x = "",
-       caption = "Source: FAO (2019)") +
+       caption = "Source: FAO (2019).") +
   scale_y_continuous(limits = c(2.7, 3.00)) + 
   scale_x_continuous(breaks = since_1961) + 
   bti_theme
@@ -527,9 +527,9 @@ p <- pd %>%
   scale_x_continuous(breaks = since_1961) +
   facet_wrap(item~.)+
   bti_theme + 
-  theme(legend.position = "none")+
+  theme(legend.position = "none", axis.line = element_line(size = .25))+
   scale_color_manual(values = cols)
-#p
+p
 
 ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
 ```
@@ -571,7 +571,7 @@ p <- global_indices %>%
   ggplot()+
     geom_line(aes(x=year, y=(value-1), color=Variable))+
   scale_x_continuous(breaks = since_1961, limits = c(base_year, 2013)) +
-  labs(y = paste0("Percent Change Since ", base_year),
+  labs(y = "Percent Change 1961-2013",
        x = "",
        caption="Omitting Former Soviet Union. Source: FAO (2019).") +
   scale_y_continuous(labels = scales::percent_format(), limits=c(0,NA))+
@@ -629,7 +629,7 @@ pd$group <- factor(pd$group, levels = pd$group[order(pd$value[pd$variable == "pc
 p <- ggplot(pd, aes(x= group, y = value-1, fill = variable, group = variable))+   
     geom_bar(stat="identity", position="dodge") +
     labs(x=element_blank(),
-         y="Percent Increase 1961-2013",
+         y="Percent Change 1961-2013",
          caption = "Omitting Former Soviet Union. Source: FAO (2019).")  +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
     theme(legend.title = element_blank(), legend.position = "none")+
@@ -638,7 +638,7 @@ p <- ggplot(pd, aes(x= group, y = value-1, fill = variable, group = variable))+
                       breaks=c("pct_chg_d_yld", "pct_chg_m_yld", "pct_chg_stocking"),
                       labels=c("Dairy Yields", "Beef Yields", "Cattle Stocks per Pasture Area"))+
   bti_theme +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.line = element_line(size = .25))
 
 #p
 
@@ -743,7 +743,7 @@ pasture_area_change_by_income <- left_join(filter(pasture_area_by_income), temp)
 #create graph
 p <- ggplot(pasture_area_change_by_income) +
   geom_line(aes(x=year, y=change/1000000, color = inc_group_16)) +
-  labs(x="Year", y="Pasture Area (Mha)", 
+  labs(x="Year", y="Pasture Area (million ha)", 
        title = "", 
        caption = "Omitting Countries Missing World Bank Income Group. Source: FAO (2019).") +
   scale_x_continuous(breaks = since_1961) + 
@@ -775,7 +775,7 @@ p <- pasture_by_income %>%
   ggplot() +
   geom_line(aes(x=year, y = (pct_chg_area-1), color = inc_group_16)) + 
   labs(x="", y="Percent Change since 1961", 
-       caption = "Omitting countries missing World Bank income group. Sources: FAO (2019). World Bank (2018)") +
+       caption = "Omitting countries missing World Bank income group. Sources: FAO (2019), World Bank (2018).") +
   scale_x_continuous(breaks = since_1961) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
   scale_color_manual(values = cols, name ="Income Group",
@@ -796,7 +796,7 @@ p <- income_indices %>%
   filter(year<=2016) %>%
   ggplot() + geom_line(aes(x=year, y=value * t_to_kg, color = inc_group_16)) +  #convert yields from metric tons to kg
   labs(x="", y="Yields (kg product/animal)", 
-       caption = "Omitting Former Soviet Union & countries missing World Bank income group.\nSources: FAO (2019). World Bank (2018)") +
+       caption = "Omitting Former Soviet Union & countries missing World Bank income group.\nSources: FAO (2019), World Bank (2018).") +
   bti_theme +
   scale_x_continuous(breaks = since_1961_2013) + 
   scale_y_continuous(labels = point) + 
@@ -922,10 +922,11 @@ p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)
   geom_col()+
   labs(x="", 
        y = "kg beef/kg dry matter consumption",
-       caption="Source: Wirsenius et al. (2010)")+ #source is fue_wirsenius_2010
+       caption="Source: Wirsenius et al. (2010).")+ 
   bti_theme+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), axis.line = element_line(size = .25)) +  
   facet_wrap(variable~., scales = "free")+
+  scale_y_continuous(limits=c(0, NA)) +
   scale_fill_manual(values = cols, name ="",labels = c("Pasture Contracted", "Pasture Expanded"))
   
 p <- p + 
@@ -963,12 +964,12 @@ p <- plot_dat %>% ggplot() +
     geom_line(aes(x=year, y=change*ha_to_mha, color=group,group=group, region=group)) +
   labs(title="",
        x="",
-       y="Pasture Area Change Since 1961 (Mha)",
-       caption = "FAO (2019)") +
+       y="Pasture Area Change Since 1961 (million ha)",
+       caption = "Source: FAO (2019).") +
   scale_y_continuous(labels = point) +
   scale_x_continuous(breaks = since_1961) + 
   bti_theme+
-  theme(legend.title =element_blank())+
+  theme(legend.title =element_blank(),axis.line = element_line(size = .25))+
   scale_color_manual(values=cols)
 
 #p
@@ -1023,10 +1024,10 @@ p <- pasture_projections %>%
   ggplot(aes(x=reorder(Label, `Projected Absolute Change (Mha)`) , y=`Projected Absolute Change (Mha)`, fill=Label))+
   geom_col()+
   labs(x="Projection Name",
-       y="Projected Pasture Change 2010-2050 (Mha)",
-       caption = "Sources: Riahi et al. (2017); Searchinger et al. (2018)")+
+       y="Projected Pasture Change 2010-2050 (million ha)",
+       caption = "Sources: Riahi et al. (2017), Searchinger et al. (2018).")+
   bti_theme+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none", axis.line = element_line(size = .25))+
   scale_x_discrete(labels=function(x){sub("\\s", "\n", x)})+
   scale_fill_manual(values = rep("#0d4459",6), aesthetics = "fill")
  
@@ -1048,8 +1049,8 @@ p <- combined_country %>%
   geom_line()+
     labs(title = "",
        x="",
-       y="Pasture Area Change since 1961 (Mha)",
-       caption = "Source: Adapted from Godde et al. (2018)",
+       y="Pasture Area Change since 1961 (million ha)",
+       caption = "Source: Adapted from Godde et al. (2018).",
        color="Climate")+  #change legend title
   scale_y_continuous(labels = point)+
   scale_x_continuous(breaks = since_1961)+
@@ -1130,9 +1131,9 @@ p <- pd %>% filter(Country != "Oceania") %>% #plot w/o Oceania
   scale_y_continuous(limits = c(0.75,1.25))+
   scale_x_continuous(breaks = since_1961_2013)+
   labs(x="", y="Ratio of Domestic Bovine Meat\n Production to Supply", 
-       caption = "Omitting Oceania, which produces over 2x domestic supply.\nSource: FAO (2019)")+
+       caption = "Omitting Oceania, which produces over 2x domestic supply.\nSource: FAO (2019).")+
   bti_theme+
-  theme(legend.title = element_blank())+
+  theme(legend.title = element_blank(), axis.line = element_line(size = .25))+
   scale_color_manual(values=cols)
 
 #p
@@ -1186,13 +1187,13 @@ p <- pd %>%
   geom_point(alpha=.2) + 
   labs(y = ("Annual Percent Change"),
        x = "",
-       caption = "Gray represents 95% confidence interval.\nSource: FAO(2019)",
+       caption = "Gray represents 95% confidence interval.\nSource: FAO(2019).",
        color="") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(-.05,.05)) +
   scale_x_continuous(breaks = since_1961) +
   facet_wrap(item~.)+
   bti_theme+
-  theme(legend.position = "none")+
+  theme(legend.position = "none",axis.line = element_line(size = .25))+
   scale_color_manual(values=cols, name ="Income Group",
                        breaks=c("H", "UM", "LM", "L"),
                        labels=c("High", "Upper-Middle", "Lower-Middle", "Low"))
@@ -1200,3 +1201,47 @@ p <- pd %>%
 p
 ggsave(plot=p, filename = "outputs/fig_a4_yield_growth_slowdown.pdf") #, width = 8, height = 8
 ```
+
+
+
+```{r Extra graph with historical trend and projections}
+#create df with 2010 and 2050 pasture values 
+pasture_2010 <- pasture_global[pasture_global$year==2010,"area"] %>% pull()  #get 2010 pasture area
+pasture_2010 <- pasture_2010*ha_to_mha #convert to million ha
+
+pasture_2050 <- pasture_projections %>% 
+  filter(`Base Year`==2010) %>% #filter to just 2010 base years
+  filter(str_detect(Source, "WRI")) %>% #just models of interest
+  select(Label, `Projected Absolute Change (Mha)`)
+
+iassa_projections <- read_csv(file = "data/pasture_projections/iassa_change_from_2010_values.csv")
+iassa_projections <- iassa_projections %>% 
+  select(Model, c_2020, c_2030, c_2040, c_2050) %>% 
+  mutate(`2010`= pasture_2010) %>%
+  mutate(`2020`=`2010` + c_2020, `2030`=`2010`+c_2030, `2040`=`2010`+c_2040, `2050`=`2010`+c_2050) %>% 
+  select(-c_2020, -c_2030, -c_2040, -c_2050) %>% 
+  gather(key = year, value = area, -Model) %>% 
+  rename("Data Series"=Model) %>% 
+  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
+  
+
+projection_values <- tibble(`Data Series` = pasture_2050$Label, change = pasture_2050$`Projected Absolute Change (Mha)`, `2010`= pasture_2010) %>%
+  mutate(`2050` = `2010`+change) %>% 
+  select(-change) %>% 
+  gather(key = "year", value = "area", -`Data Series`) %>% 
+  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
+
+pd <- pasture_global %>% 
+  mutate(`Data Series` = "FAO (Adjusted)") %>% 
+  bind_rows(projection_values, iassa_projections)
+
+p <- ggplot(pd, aes(x=year, y=area*ha_to_mha, color=`Data Series`))+
+  geom_line()+
+  #scale_y_continuous(limits = c(0, NA))+
+  #bti_theme+
+  scale_color_manual(values=cols)
+
+p
+ggsave(filename = "outputs/extra_historic_vs_projection.pdf", p)
+```
+
