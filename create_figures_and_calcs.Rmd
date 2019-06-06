@@ -310,6 +310,9 @@ pasture_change_rate_post2000 <- -pasture_global_pct_fall_2000_16/16
 temp <- pasture_global %>% filter (year==1984|year==2000) #just get 1984 and 2000 values
 pasture_change_rate_pre2000 <- (filter(temp, year==2000)[,2] / filter(temp, year==1984)[,2])/16
 
+# absolute change 1961-2016
+pasture_change_1961_2016_abs <- (pasture_global$area[pasture_global$year==2016] - pasture_global$area[pasture_global$year==1961])*ha_to_mha
+
 #percent change from 1961 to 2016
 pasture_change_1961_2016 <- pct_chg(pasture_global, "area", 1961, 2016)
 
@@ -331,7 +334,9 @@ p <- ggplot(pasture_global) +
 
 ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
 ```
-- The decline of `r round(pasture_global_abs_fall_2000_16/1000000,1)` is equivalent to `r round(pasture_global_abs_fall_2000_16 / pasture_change_1961_2000$difference, 2)`% of the change in pasture from 1961 to 2000.  
+- The decline of `r round(pasture_global_abs_fall_2000_16/1000000,1)` is equivalent to `r round(pasture_global_abs_fall_2000_16 / pasture_change_1961_2000$difference, 2)`% of the change in pasture from 1961 to 2000. 
+
+In 2016, there were approximately `r pasture_change_1961_2016_abs` million hectares more pastureland than there were in 1961, an area roughly the size of Mexico
 
 
 ```{r Australia change in pasture rate }
@@ -922,7 +927,7 @@ p <- ggplot(pd,aes(x=reorder(region, -value), y=1/value, fill=pasture_increased)
   geom_col()+
   labs(x="", 
        y = "kg beef/kg dry matter consumption",
-       caption="Source: Wirsenius et al. (2010).")+ 
+       caption="Note: Values from 1992/1994\nSource: Wirsenius et al. (2010).")+ 
   bti_theme+
   theme(axis.text.x = element_text(angle = 90, hjust = 1), axis.line = element_line(size = .25)) +  
   facet_wrap(variable~., scales = "free")+
@@ -1009,30 +1014,48 @@ p <- ggplot(pd, aes(x=year, y=tot, color=region)) +
 ggsave(filename = "outputs/fig_10_forecast_beef_milk_consumption.pdf", plot = p)
 ```
 
-```{r Fig 12 Bar Chart of Pasture Projections}
-pasture_projections <- read_csv(file="data/pasture_projections/pasture_projections_for_graphing.csv") #data manually collected from published pasture projection analysis
 
-#rename labels for graphing
-pasture_projections$Label <- recode(pasture_projections$Label, "Glob-Agri (High)" = ("GlobAgri-WRR (High Productivity)"),
-                                    "Glob-Agri (Historical)" = "GlobAgri-WRR (Historical Productivity)",
-                                    "Glob-Agri (Low)" = "GlobAgri-WRR (Low Productivity)")
+```{r Prep data for projection graph}
+#create df with 2010 and 2050 pasture values 
+pasture_2010 <- pasture_global[pasture_global$year==2010,"area"] %>% pull()  #get 2010 pasture area
+pasture_2010 <- pasture_2010*ha_to_mha #convert to million ha
 
-#bar chart of projections, maybe just since 2010
-p <- pasture_projections %>% 
-  filter(`Base Year`==2010) %>% #filter to just 2010 base years
-  filter(`To Graph`=="y") %>% #filter to just 2010 base years
-  ggplot(aes(x=reorder(Label, `Projected Absolute Change (Mha)`) , y=`Projected Absolute Change (Mha)`, fill=Label))+
-  geom_col()+
-  labs(x="Projection Name",
-       y="Projected Pasture Change 2010-2050 (million ha)",
-       caption = "Sources: Riahi et al. (2017), Searchinger et al. (2018).")+
-  bti_theme+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none", axis.line = element_line(size = .25))+
-  scale_x_discrete(labels=function(x){sub("\\s", "\n", x)})+
-  scale_fill_manual(values = rep("#0d4459",6), aesthetics = "fill")
- 
-#p
-ggsave(filename = "outputs/fig_12_projected_pasture_2010_2050.pdf", plot = p)
+pasture_2050 <- pasture_projections %>% 
+  filter(str_detect(Label, c("Historical"))) %>% #filter to just single WRI model of interest
+  select(Label, `Projected Absolute Change (Mha)`)
+
+iassa_projections <- read_csv(file = "data/pasture_projections/iassa_change_from_2010_values.csv")
+iassa_projections <- iassa_projections %>% 
+  select(Model, c_2020, c_2030, c_2040, c_2050) %>% 
+  mutate(`2010`= pasture_2010) %>%
+  mutate(`2020`=`2010` + c_2020, `2030`=`2010`+c_2030, `2040`=`2010`+c_2040, `2050`=`2010`+c_2050) %>% 
+  select(-c_2020, -c_2030, -c_2040, -c_2050) %>% 
+  gather(key = year, value = area, -Model) %>% 
+  rename("Data Series"=Model) %>% 
+  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
+  
+
+projection_values <- tibble(`Data Series` = pasture_2050$Label, change = pasture_2050$`Projected Absolute Change (Mha)`, `2010`= pasture_2010) %>%
+  mutate(`2050` = `2010`+change) %>% 
+  select(-change) %>% 
+  gather(key = "year", value = "area", -`Data Series`) %>% 
+  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
+
+pd <- pasture_global %>% 
+  mutate(`Data Series` = "FAO (Adjusted)") %>% 
+  bind_rows(projection_values, iassa_projections)
+```
+
+```{r Graph projections}
+p <- ggplot(pd, aes(x=year, y=area*ha_to_bha, color=`Data Series`)) +
+  geom_line() +
+  labs(x = "", y = "Pasture Area (Billion Ha)", color = "Projection", 
+       caption = "FAO historical pasture data (adjusted) shown in turquoise.\nSources: Riahi et al. (2017), Searchinger et al. (2018).") +
+  scale_color_manual(values=cols) + 
+  bti_theme
+    
+p
+ggsave(filename = "outputs/fig_12_historic_vs_projection.pdf", p, width = 8, height = 5)
 ```
 
 ## Fig 5 and Analyses by Climate Zone
@@ -1146,25 +1169,35 @@ ggsave(filename = "outputs/fig_11_domestic_production_to_supply.pdf", plot = p) 
 
 ## A1 Hyde, Original and Adjusted FAO Pasture Area
 ```{r A1}
-unadjusted_pasture_area <- read_csv(file = "data/raw_data/fao_country_level_land_area.csv") %>% filter(Item == "Land under perm. meadows and pastures") %>% group_by(Year) %>% summarize(tot = sum(Value, na.rm=T)*1000) #global pasture area in ha (converted from 1000 ha)
+#create dataframes with unadjusted pasture area from FAO's global values and adjusted values but with Saudi Arabia left in
+unadjusted_pasture_area <- read_csv(file = "data/raw_data/fao_global_perm_pasture_area.csv") %>% 
+  select(-Unit, -Domain, -Area, -Element, -Item) %>% 
+  mutate(Value  = Value*1000, Source = "FAO (Unadjusted)") %>%  #convert from 1000 ha to ha & add column for sources
+  rename("area"=Value, "year" = Year)
 
-global_pasture_area <- read_csv(file = "data/raw_data/fao_global_perm_pasture_area.csv")
+with_saudi <- full_data %>% group_by(year) %>% summarize(area = sum(area, na.rm=T)) %>% mutate(Source = "FAO (Adjusted inc. Saudi Arabia)")
 
-with_saudi <- full_data %>% group_by(year) %>% summarize(tot = sum(area, na.rm=T))
+#combine dataframes with Hyde and adjusted data without Saudi Arabia
+combined_global_series <- hyde %>% 
+  mutate(area = area*100) %>%  #convert from 100 ha to ha
+  select(-region) %>% 
+  mutate(Source = "HYDE v3.2") %>% 
+  bind_rows(with_saudi, unadjusted_pasture_area, mutate(pasture_global, Source = "FAO (Adjusted exc. Saudi Arabia)"))
+  
 
-p <- ggplot() +
-  geom_line(data = pasture_global,aes(x = year, y = area*ha_to_bha), color = "green") +  #convert to billion ha 
-  geom_line(data = filter(with_saudi, year<2017), aes(x = year, y = tot*ha_to_bha), color = "#000000") + 
-  geom_line(data = filter(hyde, year>=1900), aes(x = year, y = area/10000000), color = "red") +  #convert to billion ha 
-  geom_line(data = unadjusted_pasture_area, aes(x = Year, y = tot*ha_to_bha), color = "blue") +  #convert to billion ha 
+p <- combined_global_series %>% filter(year>=1940 & year<2017) %>% #just shiow values for 1990+
+  ggplot(aes(x = year, y = area * ha_to_bha, color = Source)) +
+  geom_line()+
   labs(y = "Global Pasture Area (billion ha)", 
-       x = "") +
-  #scale_x_continuous(breaks = since_1961) + 
-  bti_theme
-
+       x = "",
+       caption = "Sources: FAO (2019), Klein Goldewijk et al. (2017)") +
+  bti_theme+
+  scale_color_manual(values = cols)+
+  scale_x_continuous(breaks = c(seq(1940,2010,10)))+
+  scale_y_continuous(limits = c(NA, 3.5), breaks = c(seq(2.5,3.5,.25)), labels =  c(seq(2.5,3.5,.25)))
 p
-
-#ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
+  
+ggsave(filename = "outputs/fig_a1_global_pasture_area_trend_comparison.pdf", plot = p, width=10, height = 10)
 ```
 
 
@@ -1179,6 +1212,7 @@ pd <-   combined_country %>%
   group_by(item, inc_group_16) %>% 
   mutate(pct_chg = (yield/dplyr::lag(yield))) #annual pct change by item
 ```
+
 ```{r Fig A4 - Graph Yield Slowdown in High Income Countries}
 p <- pd %>% 
   filter(inc_group_16 %in% c("H")) %>%  #specify income groups
@@ -1202,46 +1236,42 @@ p
 ggsave(plot=p, filename = "outputs/fig_a4_yield_growth_slowdown.pdf") #, width = 8, height = 8
 ```
 
+```{r Extra line graph of GHGs from forest to pasture considering to include in main text}
+#load data on GHG emissions from land use change by country from Hougton et al.. Data provided in 2017 by Richard Houghton and Zander Nassikas, Woods Hole Reserach Center on November 14, 2017
+houghton_wide <- data.table::fread(input = "data/raw_data/houghton_2017_v5_FRA2015_Ag_process_based_netflux_world_countries.csv", skip = 1)
 
+#reshape and summarize data for FP (forest-to-pasture) and OP (other to pasture) and CP (cropland to pasture)
+houghton_long <- t(houghton_wide)
+houghton_long <- as_tibble(houghton_long, rownames = NA) %>%  mutate(country = names(houghton_wide))
 
-```{r Extra graph with historical trend and projections}
-#create df with 2010 and 2050 pasture values 
-pasture_2010 <- pasture_global[pasture_global$year==2010,"area"] %>% pull()  #get 2010 pasture area
-pasture_2010 <- pasture_2010*ha_to_mha #convert to million ha
+names(houghton_long) <- houghton_long[1,]
 
-pasture_2050 <- pasture_projections %>% 
-  filter(`Base Year`==2010) %>% #filter to just 2010 base years
-  filter(str_detect(Source, "WRI")) %>% #just models of interest
-  select(Label, `Projected Absolute Change (Mha)`)
+#summarize to global level, just for forest-to-pasture
+pd <- houghton_long %>% 
+  gather(key = "year", value = "value",-Country, -Process, -Units) %>% 
+  filter(Process %in% c("FP")) %>% 
+  mutate(value = as.numeric(value), year=as.integer(year)) %>% 
+  select(-Units) %>% 
+  dplyr::group_by(year, Process) %>% 
+  dplyr::summarize(ghg = sum(value, na.rm=T)) %>% 
+  filter(year>=1960) #filter to time period we examine elsewhere in report
 
-iassa_projections <- read_csv(file = "data/pasture_projections/iassa_change_from_2010_values.csv")
-iassa_projections <- iassa_projections %>% 
-  select(Model, c_2020, c_2030, c_2040, c_2050) %>% 
-  mutate(`2010`= pasture_2010) %>%
-  mutate(`2020`=`2010` + c_2020, `2030`=`2010`+c_2030, `2040`=`2010`+c_2040, `2050`=`2010`+c_2050) %>% 
-  select(-c_2020, -c_2030, -c_2040, -c_2050) %>% 
-  gather(key = year, value = area, -Model) %>% 
-  rename("Data Series"=Model) %>% 
-  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
+#plot
+p <-  ggplot(pd, aes(x=year, y=ghg, color=Process)) + 
+  labs(x="", y="Net Annual Emissions (GtC)",
+       caption = "Source: Houghton & Nassikas (2017)") +
+  geom_line() +
+  #geom_abline(aes(slope=0, intercept=0), size=.25, linetype = "dashed")+  #can add for horizontal line at 0
+  scale_color_manual(values=cols) +
+  scale_x_continuous(breaks = c(seq(1960, 2010, 10)))+
+  bti_theme +
+  theme(legend.position = "none",axis.line = element_line(size = .25))
   
-
-projection_values <- tibble(`Data Series` = pasture_2050$Label, change = pasture_2050$`Projected Absolute Change (Mha)`, `2010`= pasture_2010) %>%
-  mutate(`2050` = `2010`+change) %>% 
-  select(-change) %>% 
-  gather(key = "year", value = "area", -`Data Series`) %>% 
-  mutate(year=as.numeric(year), area = area*1000000) #convert from million ha to ha
-
-pd <- pasture_global %>% 
-  mutate(`Data Series` = "FAO (Adjusted)") %>% 
-  bind_rows(projection_values, iassa_projections)
-
-p <- ggplot(pd, aes(x=year, y=area*ha_to_mha, color=`Data Series`))+
-  geom_line()+
-  #scale_y_continuous(limits = c(0, NA))+
-  #bti_theme+
-  scale_color_manual(values=cols)
-
 p
-ggsave(filename = "outputs/extra_historic_vs_projection.pdf", p)
+
+ggsave(filename = "outputs/extra_ghg_from_forest_to_pasture.pdf", plot = p)
 ```
+
+
+
 
