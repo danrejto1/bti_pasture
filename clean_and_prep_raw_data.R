@@ -359,6 +359,7 @@ pasture_country$area <- pasture_country$area*1000  #CHANGE UNITS FOR PASTURE ARE
 # For each year where there is an outlier change value, I assign the previous year's value. I then adjust future values so the year-to-year changes remain the same as originally reported in FAOSTAT
 adjusted_countries <- data_frame(country = c("Ecuador", "Hungary", "Japan", "Sudan, Former"),
                                  year = c(2014, 2010, 2013, 2009))
+
 pasture_country[pasture_country$country=="Ecuador" & pasture_country$year>=2014,]$area <- 
   pasture_country[pasture_country$country=="Ecuador" & pasture_country$year>=2014,]$area + 
   (pasture_country[pasture_country$country=="Ecuador" & pasture_country$year==2013,]$area - 
@@ -451,7 +452,9 @@ pasture_country[pasture_country$country=="Australia",]$area <-
 #load country level data of historical pasture area as modeled by HYDE v3.2 available at ftp://ftp.pbl.nl/hyde/hyde3.2/baseline/txt/
 # the units are km^2
 km2_to_ha <- 100
+
 hyde_pasture_country <- read_csv("data/raw_data/hyde_v3-2_pasture_by_country.csv", skip = 1, na = "#N/A")
+
 hyde_pasture_country <- hyde_pasture_country %>%
   filter(is.na(country_name)==F) %>% #remove rows not representing countries. these have no area either
   gather(key = year, value=area, -country_code,	-country_name_formula, -country_name) %>%
