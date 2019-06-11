@@ -314,7 +314,7 @@ p <- ggplot(pasture_global) +
 
 #p
 
-ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
+#ggsave(filename = "outputs/fig_1_global_pasture_area_trend.pdf", plot = p)
 ```
 - The decline of `r round(pasture_global_abs_fall_2000_16/1000000,1)` is equivalent to `r round(pasture_global_abs_fall_2000_16 / pasture_change_1961_2000$difference, 2)*100`% of the change in pasture from 1961 to 2000.  
 
@@ -406,11 +406,19 @@ eu_forest_pct_chg <- ((forest_change_eu[2,2] - forest_change_eu[1,2]) /forest_ch
 ```{r Pct change values in production and consumption }
 top_grazing_animals <- c("cattle", "goat", "sheep", "buffalo")
 
+#From 2000 to 2013
 # Production of buffalo, cattle, goat, sheep MEAT 
 meat_prod_change_2000 <- pct_chg(filter(meat_prod_global_adjusted, item %in% top_grazing_animals), "m_prod", 2000, 2013)
 
+#cattle meat
+beef_prod_change_2000 <- pct_chg(filter(meat_prod_global_adjusted, item =="cattle" ), "m_prod", 2000, 2013)
+
 # Production of buffalo, cattle, goat, sheep MILK
 milk_prod_change_2000 <- pct_chg(milk_prod_global_adjusted, "d_prod", 2000, 2013)
+
+#cattle milk
+cow_milk_prod_change_2000 <- pct_chg(filter(milk_prod_global_adjusted, item =="cattle" ), "d_prod", 2000, 2013)
+
 
 #From 1961 to 2013
 
@@ -423,6 +431,8 @@ milk_prod_change_1961 <- pct_chg(milk_prod_global, "d_prod", 1961, 2013)
 
 - Between 2000 and 2013, aggregate production of meat and milk from cattle, buffaol, goats and sheep—the most common grazing animals—rose by `r meat_prod_change_2000$percent_difference`% and by `r milk_prod_change_2000$percent_difference`%, respectively.
 
+- Between 2000 and 2013, production of beef rose by `r  beef_prod_change_2000$percent_difference`%.
+and cow milk by `r cow_milk_prod_change_2000$percent_difference`%.
 
 ```{r Calculate Decadal Global Consumption & Yield Changes}
 base_year = 1961
@@ -513,7 +523,7 @@ p <- pd %>%
   facet_wrap(item~.)
 #p
 
-ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
+#ggsave(filename = "outputs/fig_7_annual_beef_milk_consumption_change.pdf", plot = p)
 ```
 
 ```{r Calculate pct change in global cattle meat and milk yields, production and consumption}
@@ -563,7 +573,7 @@ p <- global_indices %>%
                        labels=c("Pasture Area", "Milk Production", "Beef Production", "Number of Cattle")) +
   theme_hc()
 #p
-ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p, width = wdt, height=hgt)
+#ggsave(filename = "outputs/fig_6_beef_milk_global_production_pct_chg.pdf", plot = p, width = wdt, height=hgt)
 ```
 
 ```{r Calculate change in  meat & milk yields and stocking by geographic group}
@@ -619,7 +629,7 @@ p <- regional_indices %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #p
-ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p, width=wdt, height=hgt)
+#ggsave(filename = "outputs/fig_a4_change_in_yld_by_geographic_group.pdf", p, width=wdt, height=hgt)
 ```
 
 - Globally, the number of cattle stocks per hectare has increased `r round(filter(global_indices, year==2016)$pct_chg_stocking-1,2)*100`% since 1961
